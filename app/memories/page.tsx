@@ -246,9 +246,9 @@ function MemoriesPageContent() {
                   )}
 
                   {/* Tags display */}
-                  {!isEditing && entry.tags?.length > 0 && (
+                  {!isEditing && (entry.tags?.length ?? 0) > 0 && (
                     <div className="mt-4 flex flex-wrap gap-2">
-                      {entry.tags.map((tag) => (
+                      {entry.tags!.map((tag) => (
                         <span
                           key={tag}
                           className="px-3 py-1 bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300 text-xs rounded-full"
