@@ -1,0 +1,20 @@
+export interface Entry {
+  id: string;
+  date: string;
+  anchor: string;
+  text: string;
+  nouns: string[];
+  is_private: boolean;
+  phase?: string;
+}
+
+export interface Node {
+  word: string;
+  connections: string[];
+  count: number;
+}
+
+export interface MemoryData {
+  entries: Entry[];
+  nodes: Node[];
+}
