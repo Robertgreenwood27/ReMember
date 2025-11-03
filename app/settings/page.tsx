@@ -1,127 +1,90 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/lib/auth-context';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { loadData } from '@/lib/storage-supabase';
+import { Node } from '@/lib/types';
+import { useAuth } from '@/lib/auth-context';
 import Link from 'next/link';
+import { Menu } from 'lucide-react'; // optional: install `lucide-react`
 
-export default function SettingsPage() {
-  const { user, loading: authLoading } = useAuth();
-  const router = useRouter();
-  const [cloudData, setCloudData] = useState({ entries: 0, nodes: 0 });
-  const [error, setError] = useState('');
+export default function Home() {
+  // ... your existing state and hooks ...
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/login');
-      return;
-    }
+  const [menuOpen, setMenuOpen] = useState(false);
 
-    if (user) {
-      loadCloudData();
-    }
-  }, [user, authLoading, router]);
-
-  const loadCloudData = async () => {
-    try {
-      const data = await loadData();
-      setCloudData({
-        entries: data.entries.length,
-        nodes: data.nodes.length,
-      });
-    } catch (err: any) {
-      setError(err.message || 'Failed to load Supabase data');
-    }
-  };
-
-  const handleExportData = async () => {
-    const data = await loadData();
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `memory-jogger-export-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-900">
-        <div className="text-neutral-500">Loading...</div>
-      </div>
-    );
-  }
+  // ... existing fetchData useEffect ...
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 p-8">
-      <div className="max-w-3xl mx-auto">
-        <div className="mb-8">
-          <Link
-            href="/"
-            className="text-sm text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
-          >
-            ← Back to anchors
-          </Link>
-        </div>
-
-        <header className="mb-12">
-          <h1 className="text-4xl font-light text-neutral-800 dark:text-neutral-100 mb-2">
-            Settings
-          </h1>
-          <p className="text-neutral-500 dark:text-neutral-400 text-sm">
-            Manage your Supabase account and data
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex flex-col md:flex-row">
+      {/* 🔹 Sidebar (Desktop only) */}
+      <aside className="hidden md:block w-64 bg-white dark:bg-neutral-800 border-r border-neutral-200 dark:border-neutral-700 p-6 overflow-y-auto">
+        <h2 className="text-lg font-medium text-neutral-700 dark:text-neutral-200 mb-4">
+          🧭 Anchors with Memories
+        </h2>
+        {anchorsWithMemories.length === 0 ? (
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+            No memories yet.
           </p>
-        </header>
+        ) : (
+          <ul className="space-y-2">
+            {anchorsWithMemories.map((anchor) => (
+              <li key={anchor}>
+                <Link
+                  href={`/memories?anchor=${encodeURIComponent(anchor)}`}
+                  className="block text-sm text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition-colors"
+                >
+                  {anchor}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </aside>
 
-        <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm p-8 mb-6">
-          <h2 className="text-xl font-medium text-neutral-800 dark:text-neutral-100 mb-4">
-            Account
-          </h2>
-          <div className="space-y-2 text-sm">
-            <p className="text-neutral-600 dark:text-neutral-400">
-              <span className="font-medium">Email:</span> {user?.email}
-            </p>
-            <p className="text-neutral-600 dark:text-neutral-400">
-              <span className="font-medium">User ID:</span>{' '}
-              <code className="text-xs bg-neutral-100 dark:bg-neutral-700 px-2 py-1 rounded">
-                {user?.id}
-              </code>
-            </p>
-          </div>
-        </div>
+      {/* 🔹 Main Content */}
+      <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto relative">
+        {/* Mobile dropdown trigger */}
+        <div className="md:hidden mb-4">
+          <button
+            onClick={() => setMenuOpen((prev) => !prev)}
+            className="flex items-center gap-2 px-4 py-2 bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-md hover:bg-neutral-300 dark:hover:bg-neutral-700 transition"
+          >
+            <Menu size={18} />
+            Anchors
+          </button>
 
-        <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm p-8 mb-6">
-          <h2 className="text-xl font-medium text-neutral-800 dark:text-neutral-100 mb-4">
-            Supabase Data
-          </h2>
-
-          <div className="p-4 bg-neutral-50 dark:bg-neutral-700 rounded-lg mb-6">
-            <p className="text-2xl font-light text-neutral-800 dark:text-neutral-100">
-              {cloudData.entries}
-            </p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">
-              {cloudData.nodes} anchors
-            </p>
-          </div>
-
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-              <p className="text-sm text-red-800 dark:text-red-300">{error}</p>
+          {/* Dropdown menu */}
+          {menuOpen && (
+            <div className="mt-2 bg-white dark:bg-neutral-800 rounded-lg shadow-lg border border-neutral-200 dark:border-neutral-700 p-4">
+              <h2 className="text-sm font-medium text-neutral-600 dark:text-neutral-300 mb-2">
+                🧭 Anchors with Memories
+              </h2>
+              {anchorsWithMemories.length === 0 ? (
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  No memories yet.
+                </p>
+              ) : (
+                <ul className="space-y-2">
+                  {anchorsWithMemories.map((anchor) => (
+                    <li key={anchor}>
+                      <Link
+                        href={`/memories?anchor=${encodeURIComponent(anchor)}`}
+                        className="block text-sm text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition-colors"
+                        onClick={() => setMenuOpen(false)}
+                      >
+                        {anchor}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           )}
-
-          <button
-            onClick={handleExportData}
-            className="px-6 py-2 text-sm bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded-full hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors"
-          >
-            Export as JSON
-          </button>
         </div>
-      </div>
+
+        {/* 🧠 Rest of your main content here (ReMind header, anchor cloud, etc.) */}
+      </main>
     </div>
   );
 }
