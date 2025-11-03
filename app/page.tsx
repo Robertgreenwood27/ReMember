@@ -306,6 +306,13 @@ export default function Home() {
               >
                 🔄 Refresh Anchors
               </button>
+              <Link
+  href="/visualize"
+  className="px-6 py-2 text-sm bg-neutral-800 dark:bg-neutral-100 text-white dark:text-neutral-900 rounded-full hover:bg-neutral-700 dark:hover:bg-neutral-200 transition-colors"
+>
+  Mine my Mind
+</Link>
+
             </div>
           </>
         )}

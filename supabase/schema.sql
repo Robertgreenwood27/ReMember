@@ -1,4 +1,4 @@
--- Memory Jogger Database Schema
+-- 🧠 Memory Jogger Database Schema
 -- Run this in your Supabase SQL Editor: https://app.supabase.com/project/_/sql
 
 -- Enable UUID extension
@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS entries (
   anchor TEXT NOT NULL,
   text TEXT NOT NULL,
   nouns TEXT[] NOT NULL DEFAULT '{}',
+  tags TEXT[] DEFAULT '{}', -- ✅ Added tags column
   is_private BOOLEAN DEFAULT FALSE,
   phase TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
