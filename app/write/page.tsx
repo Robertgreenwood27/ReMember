@@ -18,6 +18,10 @@ function WritePageContent() {
   const [previousEntries, setPreviousEntries] = useState<Entry[]>([]);
   const [showPrevious, setShowPrevious] = useState(false);
 
+  // 🆕 Tag state
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
+
   useEffect(() => {
     async function loadPrevious() {
       if (anchor) {
@@ -27,6 +31,17 @@ function WritePageContent() {
     }
     loadPrevious();
   }, [anchor]);
+
+  const addTag = () => {
+    if (tagInput.trim() && !tags.includes(tagInput.trim().toLowerCase())) {
+      setTags([...tags, tagInput.trim().toLowerCase()]);
+      setTagInput('');
+    }
+  };
+
+  const removeTag = (tag: string) => {
+    setTags(tags.filter((t) => t !== tag));
+  };
 
   const handleSave = async () => {
     if (!text.trim()) {
@@ -45,17 +60,19 @@ function WritePageContent() {
         id: uuidv4(),
         date: new Date().toISOString(),
         anchor: anchor.toLowerCase(),
-        text: text,
-        nouns: nouns,
+        text,
+        nouns,
         is_private: false,
+        tags, // 🆕 include tags
       };
 
-      // Save (will use Supabase if configured and logged in, otherwise localStorage)
+      // Save entry
       await addEntry(entry);
 
       // Show success message
       setShowSuccess(true);
       setText('');
+      setTags([]); // 🆕 reset tags
 
       // Redirect after a moment
       setTimeout(() => {
@@ -135,6 +152,44 @@ function WritePageContent() {
             autoFocus
           />
 
+          {/* 🆕 Tag Input */}
+          <div className="mt-4">
+            <div className="flex flex-wrap gap-2 mb-2">
+              {tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="px-3 py-1 bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 text-xs rounded-full flex items-center gap-2"
+                >
+                  #{tag}
+                  <button
+                    onClick={() => removeTag(tag)}
+                    className="text-neutral-400 hover:text-neutral-600"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+
+            <div className="flex gap-2">
+              <input
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={(e) =>
+                  e.key === 'Enter' && (e.preventDefault(), addTag())
+                }
+                placeholder="Add a tag (e.g. cringy, private)..."
+                className="flex-1 px-3 py-2 text-sm bg-neutral-100 dark:bg-neutral-800 rounded-lg border border-neutral-300 dark:border-neutral-700"
+              />
+              <button
+                onClick={addTag}
+                className="px-3 py-2 text-sm bg-neutral-800 dark:bg-neutral-100 text-white dark:text-neutral-900 rounded-lg hover:bg-neutral-700 dark:hover:bg-neutral-200"
+              >
+                Add
+              </button>
+            </div>
+          </div>
+
           {/* Actions */}
           <div className="flex justify-between items-center mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-700">
             <div className="text-sm text-neutral-400">
@@ -171,11 +226,13 @@ function WritePageContent() {
 
 export default function WritePage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-900">
-        <div className="text-neutral-500">Loading...</div>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-900">
+          <div className="text-neutral-500">Loading...</div>
+        </div>
+      }
+    >
       <WritePageContent />
     </Suspense>
   );

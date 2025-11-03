@@ -39,15 +39,19 @@ export async function addEntry(entry: Entry): Promise<MemoryData> {
   if (!user) throw new Error('User not authenticated');
 
   // Insert entry
-  const { error: entryError } = await supabase.from('entries').insert({
-    user_id: user.id,
-    date: entry.date,
-    anchor: entry.anchor,
-    text: entry.text,
-    nouns: entry.nouns,
-    is_private: entry.is_private,
-    phase: entry.phase,
-  });
+  const { error: entryError } = await supabase
+    .from('entries')
+    .insert({
+      user_id: user.id,
+      date: entry.date,
+      anchor: entry.anchor,
+      text: entry.text,
+      nouns: entry.nouns,
+      is_private: entry.is_private,
+      phase: entry.phase,
+      tags: entry.tags || [] // 🆕 Added tags field (optional)
+    });
+
   if (entryError) throw entryError;
 
   // Update or insert nodes
@@ -124,7 +128,8 @@ export async function getEntriesForAnchor(anchor: string): Promise<Entry[]> {
   return data || [];
 }
 
-export async function updateEntry(id: string, newText: string): Promise<void> {
+// 🆕 Updated version of updateEntry supporting text + tags
+export async function updateEntry(entryId: string, newText: string, newTags?: string[]): Promise<void> {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
@@ -133,11 +138,11 @@ export async function updateEntry(id: string, newText: string): Promise<void> {
     .from('entries')
     .update({
       text: newText,
+      tags: newTags || [], // 🆕 include tags
       updated_at: new Date().toISOString(),
     })
-    .eq('id', id)
+    .eq('id', entryId)
     .eq('user_id', user.id);
 
   if (error) throw error;
 }
-
