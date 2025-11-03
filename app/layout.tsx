@@ -3,7 +3,7 @@ import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 
 export const metadata: Metadata = {
-  title: "Memory Jogger - A Self-Growing Map of Personal Memory",
+  title: "ReMind - A Self-Growing Map of Personal Memory",
   description: "A minimalist journaling web app that helps you rediscover your past through anchors.",
 };
 
