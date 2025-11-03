@@ -6,7 +6,7 @@ import { loadData } from '@/lib/storage-supabase';
 import { Node } from '@/lib/types';
 import { useAuth } from '@/lib/auth-context';
 import Link from 'next/link';
-import { Menu } from 'lucide-react'; // install if not already: npm i lucide-react
+import { Menu } from 'lucide-react'; // npm i lucide-react
 
 /* 🌀 Weighted random helper */
 function weightedRandom(nodes: Node[], count = 40): Node[] {
@@ -34,8 +34,25 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [entriesCount, setEntriesCount] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false); // ✅ start safe (no SSR access)
+
   const router = useRouter();
   const { user, signOut, loading: authLoading } = useAuth();
+
+  /* 🧠 Load dropdown state only on client */
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('infoOpen');
+      if (stored === 'true') setInfoOpen(true);
+    }
+  }, []);
+
+  /* 🧠 Save dropdown state changes */
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('infoOpen', String(infoOpen));
+    }
+  }, [infoOpen]);
 
   /* 🧠 Fetch Supabase data and randomize anchors */
   useEffect(() => {
@@ -95,6 +112,7 @@ export default function Home() {
     );
   }
 
+
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex flex-col md:flex-row">
       {/* 🔹 Sidebar (Desktop only) */}
@@ -134,7 +152,6 @@ export default function Home() {
             Anchors
           </button>
 
-          {/* Dropdown menu */}
           {menuOpen && (
             <div className="mt-2 bg-white dark:bg-neutral-800 rounded-lg shadow-lg border border-neutral-200 dark:border-neutral-700 p-4">
               <h2 className="text-sm font-medium text-neutral-600 dark:text-neutral-300 mb-2">
@@ -198,6 +215,50 @@ export default function Home() {
             </div>
           </div>
         </header>
+
+        {/* 🧩 Info Dropdown */}
+        <div className="mb-8">
+          <details
+            open={infoOpen}
+            onToggle={(e) => setInfoOpen(e.currentTarget.open)}
+            className="group bg-neutral-100 dark:bg-neutral-800 rounded-xl p-4 transition-all border border-neutral-200 dark:border-neutral-700"
+          >
+            <summary className="flex items-center justify-between cursor-pointer list-none">
+              <span className="text-sm font-medium text-neutral-700 dark:text-neutral-200">
+                What am I looking at you ask?
+              </span>
+              <svg
+                className="w-4 h-4 text-neutral-500 group-open:rotate-180 transition-transform"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+
+            <div className="mt-3 text-sm text-neutral-600 dark:text-neutral-300 leading-relaxed space-y-3">
+              <p>
+                <strong>Anchors</strong> are words or ideas that connect related memories.
+                Each time you write about something, the app extracts important nouns and
+                builds links between them — gradually forming a map of your thoughts.
+              </p>
+              <p>
+                <strong>Tags</strong> are optional labels you can add, like
+                <code className="px-1 py-0.5 mx-1 bg-neutral-200 dark:bg-neutral-700 rounded text-xs">cringy</code>,
+                <code className="px-1 py-0.5 mx-1 bg-neutral-200 dark:bg-neutral-700 rounded text-xs">private</code>,
+                or
+                <code className="px-1 py-0.5 mx-1 bg-neutral-200 dark:bg-neutral-700 rounded text-xs">funny</code>.
+                They help you find memories by emotion, tone, or theme later.
+              </p>
+              <p>
+                You can edit any memory, add or remove tags, and explore connected anchors
+                to see how your ideas and experiences intertwine over time.
+              </p>
+            </div>
+          </details>
+        </div>
 
         {/* 🔹 Anchor Cloud */}
         {nodes.length === 0 ? (
