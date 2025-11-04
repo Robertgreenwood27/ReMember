@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -8,7 +9,7 @@ import { useAuth } from '@/lib/auth-context';
 import Link from 'next/link';
 import { Menu } from 'lucide-react'; // npm i lucide-react
 
-/* 🌀 Weighted random helper */
+/* Weighted random helper */
 function weightedRandom(nodes: Node[], count = 40): Node[] {
   const weighted: Node[] = [];
   nodes.forEach((node) => {
@@ -18,7 +19,9 @@ function weightedRandom(nodes: Node[], count = 40): Node[] {
 
   const result: Node[] = [];
   const used = new Set<string>();
-  while (result.length < count && weighted.length > 0) {
+  const maxPossible = nodes.length; // Can't have more unique items than input nodes
+  
+  while (result.length < Math.min(count, maxPossible) && weighted.length > 0) {
     const pick = weighted[Math.floor(Math.random() * weighted.length)];
     if (!used.has(pick.word)) {
       result.push(pick);
@@ -34,12 +37,12 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [entriesCount, setEntriesCount] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [infoOpen, setInfoOpen] = useState(false); // ✅ start safe (no SSR access)
+  const [infoOpen, setInfoOpen] = useState(false); // start safe (no SSR access)
 
   const router = useRouter();
   const { user, signOut, loading: authLoading } = useAuth();
 
-  /* 🧠 Load dropdown state only on client */
+  /*  Load dropdown state only on client */
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('infoOpen');
@@ -47,14 +50,14 @@ export default function Home() {
     }
   }, []);
 
-  /* 🧠 Save dropdown state changes */
+  /*  Save dropdown state changes */
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('infoOpen', String(infoOpen));
     }
   }, [infoOpen]);
 
-  /* 🧠 Fetch Supabase data and randomize anchors */
+  /*  Fetch Supabase data and randomize anchors */
   useEffect(() => {
     async function fetchData() {
       if (!user) return;
@@ -115,10 +118,10 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex flex-col md:flex-row">
-      {/* 🔹 Sidebar (Desktop only) */}
+      {/* Sidebar (Desktop only) */}
       <aside className="hidden md:block w-64 bg-white dark:bg-neutral-800 border-r border-neutral-200 dark:border-neutral-700 p-6 overflow-y-auto">
         <h2 className="text-lg font-medium text-neutral-700 dark:text-neutral-200 mb-4">
-          🧭 Anchors with Memories
+          Anchors with Memories
         </h2>
         {anchorsWithMemories.length === 0 ? (
           <p className="text-sm text-neutral-500 dark:text-neutral-400">
@@ -140,7 +143,7 @@ export default function Home() {
         )}
       </aside>
 
-      {/* 🔹 Main Content */}
+      {/* Main Content */}
       <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto relative">
         {/* Mobile dropdown trigger */}
         <div className="md:hidden mb-6">
@@ -155,7 +158,7 @@ export default function Home() {
           {menuOpen && (
             <div className="mt-2 bg-white dark:bg-neutral-800 rounded-lg shadow-lg border border-neutral-200 dark:border-neutral-700 p-4">
               <h2 className="text-sm font-medium text-neutral-600 dark:text-neutral-300 mb-2">
-                🧭 Anchors with Memories
+              ­ Anchors with Memories
               </h2>
               {anchorsWithMemories.length === 0 ? (
                 <p className="text-sm text-neutral-500 dark:text-neutral-400">
@@ -180,12 +183,12 @@ export default function Home() {
           )}
         </div>
 
-        {/* 🧠 Header */}
+        {/*  Header */}
         <header className="mb-8 sm:mb-12">
           <div className="flex flex-col sm:flex-row justify-between items-center sm:items-start gap-4 mb-6">
             <div className="text-center sm:text-left flex-1">
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-light text-neutral-800 dark:text-neutral-100 mb-3">
-                🧠 ReMind
+                ReMind
               </h1>
               <p className="text-sm sm:text-base text-neutral-500 dark:text-neutral-400">
                 A self-growing map of personal memory
@@ -216,7 +219,7 @@ export default function Home() {
           </div>
         </header>
 
-        {/* 🧩 Info Dropdown */}
+        {/* Info Dropdown */}
         <div className="mb-8">
           <details
             open={infoOpen}
@@ -242,7 +245,7 @@ export default function Home() {
               <p>
                 <strong>Anchors</strong> are words or ideas that connect related memories.
                 Each time you write about something, the app extracts important nouns and
-                builds links between them — gradually forming a map of your thoughts.
+                builds links between them, gradually forming a map of your thoughts.
               </p>
               <p>
                 <strong>Tags</strong> are optional labels you can add, like
@@ -260,7 +263,7 @@ export default function Home() {
           </details>
         </div>
 
-        {/* 🔹 Anchor Cloud */}
+        {/* Anchor Cloud */}
         {nodes.length === 0 ? (
           <div className="text-center py-20">
             <p className="text-neutral-500 dark:text-neutral-400 mb-8">
@@ -304,7 +307,7 @@ export default function Home() {
                 onClick={handleRefreshAnchors}
                 className="px-6 py-2 text-sm bg-neutral-300 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 rounded-full hover:bg-neutral-400 dark:hover:bg-neutral-600 transition-colors"
               >
-                🔄 Refresh Anchors
+                Refresh Anchors
               </button>
               <Link
   href="/visualize"
