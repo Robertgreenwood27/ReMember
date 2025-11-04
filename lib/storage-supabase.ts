@@ -1,6 +1,22 @@
 import { Entry, Node, MemoryData } from './types';
-import { findConnections } from './parser';
 import { createClient } from './supabase/client';
+
+// Move findConnections here since parser.ts is removed
+function findConnections(entries: any[], targetWord: string): string[] {
+  const connections = new Set<string>();
+  
+  entries.forEach(entry => {
+    if (entry.nouns.includes(targetWord.toLowerCase())) {
+      entry.nouns.forEach((noun: string) => {
+        if (noun !== targetWord.toLowerCase()) {
+          connections.add(noun);
+        }
+      });
+    }
+  });
+  
+  return Array.from(connections);
+}
 
 export function isSupabaseConfigured(): boolean {
   return !!(
@@ -49,7 +65,7 @@ export async function addEntry(entry: Entry): Promise<MemoryData> {
       nouns: entry.nouns,
       is_private: entry.is_private,
       phase: entry.phase,
-      tags: entry.tags || [] // 🆕 Added tags field (optional)
+      tags: entry.tags || []
     });
 
   if (entryError) throw entryError;
@@ -128,7 +144,6 @@ export async function getEntriesForAnchor(anchor: string): Promise<Entry[]> {
   return data || [];
 }
 
-// 🆕 Updated version of updateEntry supporting text + tags
 export async function updateEntry(entryId: string, newText: string, newTags?: string[]): Promise<void> {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -138,7 +153,7 @@ export async function updateEntry(entryId: string, newText: string, newTags?: st
     .from('entries')
     .update({
       text: newText,
-      tags: newTags || [], // 🆕 include tags
+      tags: newTags || [],
       updated_at: new Date().toISOString(),
     })
     .eq('id', entryId)

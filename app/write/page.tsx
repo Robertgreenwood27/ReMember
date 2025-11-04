@@ -3,7 +3,6 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
-import { extractNouns } from '@/lib/parser';
 import { addEntry, getEntriesForAnchor } from '@/lib/storage-supabase';
 import { Entry } from '@/lib/types';
 
@@ -18,7 +17,7 @@ function WritePageContent() {
   const [previousEntries, setPreviousEntries] = useState<Entry[]>([]);
   const [showPrevious, setShowPrevious] = useState(false);
 
-  // 🆕 Tag state
+  // Tag state
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
 
@@ -52,8 +51,21 @@ function WritePageContent() {
     setIsSaving(true);
 
     try {
-      // Extract nouns from the text
-      const nouns = extractNouns(text);
+      // Call the API route to extract anchors
+      const response = await fetch('/api/extract-anchors', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to extract anchors');
+      }
+
+      const data = await response.json();
+      const nouns = data.anchors || [];
 
       // Create new entry
       const entry: Entry = {
@@ -63,7 +75,7 @@ function WritePageContent() {
         text,
         nouns,
         is_private: false,
-        tags, // 🆕 include tags
+        tags,
       };
 
       // Save entry
@@ -72,7 +84,7 @@ function WritePageContent() {
       // Show success message
       setShowSuccess(true);
       setText('');
-      setTags([]); // 🆕 reset tags
+      setTags([]);
 
       // Redirect after a moment
       setTimeout(() => {
@@ -152,7 +164,7 @@ function WritePageContent() {
             autoFocus
           />
 
-          {/* 🆕 Tag Input */}
+          {/* Tag Input */}
           <div className="mt-4">
             <div className="flex flex-wrap gap-2 mb-2">
               {tags.map((tag) => (
