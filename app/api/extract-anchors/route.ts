@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       messages: [
         {
           role: "system",
-          content: `You are a helpful assistant that extracts meaningful anchor words from journal entries.
+          content: `You are a helpful assistant that extracts meaningful anchor words from journal entries. Pick heavily weighted words like persons places or conrete nouns that can be visual anchors in someone's mind.
 Return ONLY a JSON array of lowercase words, like: ["word1", "word2", "word3"].`,
         },
         {
