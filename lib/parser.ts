@@ -1,11 +1,7 @@
-// @ts-nocheck
-
 import nlp from 'compromise'
 import { removeStopwords } from 'stopword'
 
-/* ─────────────────────────────
-   🧹 Smart Semantic Stopwords
-   ───────────────────────────── */
+// 🧹 Smart semantic stopword set
 const semanticStopwords = new Set([
   // Generic / filler
   'thing', 'things', 'stuff', 'something', 'anything', 'everything', 'nothing',
@@ -16,34 +12,35 @@ const semanticStopwords = new Set([
   'i', 'me', 'my', 'mine', 'myself', 'you', 'your', 'yours', 'yourself',
   'he', 'him', 'his', 'himself', 'she', 'her', 'hers', 'herself',
   'they', 'them', 'their', 'theirs', 'themselves', 'we', 'us', 'our', 'ours', 'ourselves',
-  'someone', 'somebody', 'anyone', 'anybody', 'everyone', 'everybody',
-  'person', 'people', 'nobody', 'noone',
+  'someone', 'somebody', 'anyone', 'anybody', 'everyone', 'everybody', 'noone', 'nobody', 'person', 'people',
 
   // Evaluative adjectives / vague descriptors
   'good', 'bad', 'great', 'nice', 'cool', 'fun', 'boring', 'awesome', 'amazing',
-  'better', 'best', 'worst', 'favorite', 'perfect', 'fine', 'okay',
+  'better', 'best', 'worst', 'favorite', 'perfect', 'okay', 'fine',
 
-  // Abstract / meta
+  // Abstract or meta concepts
   'thought', 'thoughts', 'idea', 'ideas', 'concept', 'feeling', 'feelings', 'emotion',
   'experience', 'experiences', 'story', 'stories', 'conversation', 'talk', 'discussion',
-  'situation', 'fact', 'truth', 'thing', 'stuff', 'way',
+  'way', 'thing', 'stuff', 'situation', 'fact', 'truth',
 
-  // Empty intensifiers
+  // Empty intensifiers or filler words
   'really', 'very', 'quite', 'just', 'maybe', 'probably', 'perhaps',
 
-  // Common low-info nouns / verbs-as-nouns
+  // Low-information verbs that sometimes appear as nouns
   'work', 'works', 'job', 'jobs', 'doing', 'done', 'making', 'make', 'try', 'trying',
-  'use', 'using', 'used', 'help', 'helping',
+  'use', 'using', 'used',
 
-  // Other generic
-  'lot', 'lots', 'end', 'start', 'beginning', 'middle',
-  'back', 'front', 'side', 'top', 'bottom',
-  'minute', 'minutes', 'hour', 'hours', 'moment'
+  // Common determiners & helpers (defensive redundancy)
+  'one', 'ones', 'two', 'three', 'four', 'five', 'thing', 'lot', 'lots', 'kind',
+
+  // Other general English noise
+  'back', 'front', 'side', 'top', 'bottom', 'end', 'start',
+  'moment', 'second', 'minute', 'hour', 'hours',
 ])
 
-/* ─────────────────────────────
-   🔤 Normalizer
-   ───────────────────────────── */
+/**
+ * Normalize any noun or anchor for consistent storage.
+ */
 export function normalizeWord(word: string): string {
   return word
     .toLowerCase()
@@ -51,41 +48,20 @@ export function normalizeWord(word: string): string {
     .trim()
 }
 
-/* ─────────────────────────────
-   🧩 Extractor
-   ───────────────────────────── */
+/**
+ * Extract nouns while filtering out semantically weak or abstract ones.
+ */
 export function extractNouns(text: string): string[] {
   const doc = nlp(text)
 
-  // ✅ Remove pronouns and determiners early (in a cloned doc)
-  const cleanedDoc = doc.clone()
-  cleanedDoc.match('#Pronoun+').delete()
-  cleanedDoc.match('#Determiner+').delete()
+  // Extract individual noun terms (not phrases)
+  let nouns = doc.nouns().terms().out('array') as string[]
+  const properNouns = doc.people().terms().out('array') as string[]
+  const places = doc.places().terms().out('array') as string[]
 
-  // 1️⃣ Single nouns
-  let nouns = cleanedDoc.nouns().terms().out('array') as string[]
-
-  // 2️⃣ Compound concept merging (balanced)
-  // - Proper names like "Pet Stop", "New York"
-  // - Two consecutive nouns like "school project"
-  const compounds = [
-    ...cleanedDoc.match('#ProperNoun+').out('array'),
-    ...cleanedDoc.match('#Noun #Noun').out('array')
-  ]
-
-  const mergedCompounds = compounds
-    .map(phrase => phrase.toLowerCase().replace(/\s+/g, '')) // merge words
-    .filter(w => w.length >= 3 && !semanticStopwords.has(w))
-
-  // 3️⃣ Proper nouns & places (individual words)
-  const properNouns = cleanedDoc.people().terms().out('array') as string[]
-  const places = cleanedDoc.places().terms().out('array') as string[]
-
-  // 4️⃣ Combine all
-  nouns = [...nouns, ...properNouns, ...places, ...mergedCompounds]
+  nouns = [...nouns, ...properNouns, ...places]
   nouns = nouns.map(normalizeWord)
 
-  // 5️⃣ Filter & dedupe
   const filtered = removeStopwords(nouns)
     .filter(noun =>
       noun.length >= 3 &&
@@ -95,9 +71,9 @@ export function extractNouns(text: string): string[] {
   return Array.from(new Set(filtered))
 }
 
-/* ─────────────────────────────
-   🕸 Connection Finder
-   ───────────────────────────── */
+/**
+ * Finds connected anchors between entries.
+ */
 export function findConnections(entries: any[], targetWord: string): string[] {
   const connections = new Set<string>()
   const normalizedTarget = normalizeWord(targetWord)
