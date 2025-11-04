@@ -88,7 +88,7 @@ function AnimatedLine({
   useFrame(({ clock }) => {
     if (lineRef.current && highlighted) {
       const material = lineRef.current.material;
-      if (material) {
+      if (material && !Array.isArray(material)) {
         material.opacity = opacity * (0.8 + Math.sin(clock.getElapsedTime() * 3) * 0.2);
       }
     }

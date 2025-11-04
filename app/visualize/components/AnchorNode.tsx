@@ -43,7 +43,8 @@ export function AnchorNode({
     if (glowRef.current) {
       const glowScale = isHighlighted ? 1.6 : 1.2;
       glowRef.current.scale.lerp(new THREE.Vector3(glowScale, glowScale, glowScale), 0.1);
-      glowRef.current.material.opacity = isHighlighted ? 0.25 : 0.08;
+      const material = glowRef.current.material as THREE.MeshBasicMaterial;
+      material.opacity = isHighlighted ? 0.25 : 0.08;
     }
 
     if (textRef.current) {

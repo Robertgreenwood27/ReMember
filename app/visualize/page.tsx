@@ -23,8 +23,8 @@ export default function VisualizationPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
   const isMobile = useIsMobile();
-  const cameraRef = useRef<THREE.Camera>();
-  const controlsRef = useRef<any>();
+  const cameraRef = useRef<THREE.Camera | null>(null);
+  const controlsRef = useRef<any>(null);
 
   useEffect(() => {
     async function fetchData() {
