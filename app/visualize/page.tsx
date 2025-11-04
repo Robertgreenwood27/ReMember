@@ -1,24 +1,30 @@
+// page.tsx
 'use client';
 
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
-import { useEffect, useState, useMemo } from 'react';
+import { OrbitControls, Stars } from '@react-three/drei';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { loadData } from '@/lib/storage-supabase';
 import { Entry } from '@/lib/types';
 import * as THREE from 'three';
-import { Info } from 'lucide-react';
-import { X } from 'lucide-react';
+import { Info, Search, X, Sparkles, Calendar } from 'lucide-react';
 import { useIsMobile } from './hooks/useIsMobile';
 import { NetworkGraph } from './components/NetworkGraph';
 import { MobileMemorySheet } from './components/MobileMemorySheet';
 import { DesktopInfoPanel } from './components/DesktopInfoPanel';
+import { EffectComposer, Bloom } from '@react-three/postprocessing';
 
 export default function VisualizationPage() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedEntry, setSelectedEntry] = useState<string | null>(null);
+  const [hoveredEntry, setHoveredEntry] = useState<string | null>(null);
   const [showInfo, setShowInfo] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
   const isMobile = useIsMobile();
+  const cameraRef = useRef<THREE.Camera>();
+  const controlsRef = useRef<any>();
 
   useEffect(() => {
     async function fetchData() {
@@ -34,14 +40,37 @@ export default function VisualizationPage() {
     fetchData();
   }, []);
 
+  const filteredEntries = useMemo(() => {
+    if (!searchQuery.trim()) return entries;
+    const query = searchQuery.toLowerCase();
+    return entries.filter(e => 
+      e.text.toLowerCase().includes(query) ||
+      e.anchor.toLowerCase().includes(query) ||
+      e.nouns.some(n => n.toLowerCase().includes(query))
+    );
+  }, [entries, searchQuery]);
+
   const selectedEntryData = useMemo(() => {
     return entries.find(e => e.id === selectedEntry) || null;
   }, [entries, selectedEntry]);
 
+  const hoveredEntryData = useMemo(() => {
+    return entries.find(e => e.id === hoveredEntry) || null;
+  }, [entries, hoveredEntry]);
+
+  const handleRandomMemory = () => {
+    if (filteredEntries.length === 0) return;
+    const randomEntry = filteredEntries[Math.floor(Math.random() * filteredEntries.length)];
+    setSelectedEntry(randomEntry.id);
+  };
+
   if (loading) {
     return (
       <div className="w-screen h-screen bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900 flex items-center justify-center">
-        <div className="text-white text-xl">Loading your memories...</div>
+        <div className="text-white text-xl flex flex-col items-center gap-3">
+          <div className="w-12 h-12 border-4 border-blue-400 border-t-transparent rounded-full animate-spin" />
+          <div>Loading your memories...</div>
+        </div>
       </div>
     );
   }
@@ -61,24 +90,52 @@ export default function VisualizationPage() {
 
   return (
     <div className="w-screen h-screen bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900 relative touch-none">
-      {/* Mobile: Compact header with info button */}
       {isMobile ? (
         <>
-          <div className="absolute top-4 left-4 right-4 z-10 flex items-center justify-between">
-            <div className="bg-black/60 backdrop-blur-md text-white px-4 py-2 rounded-full">
+          <div className="absolute top-4 left-4 right-4 z-10 flex items-center justify-between gap-2">
+            <div className="bg-black/60 backdrop-blur-md text-white px-4 py-2 rounded-full flex-1">
               <div className="text-sm font-semibold">
-                🧠 <span className="text-blue-300">{entries.length}</span> memories
+                🧠 <span className="text-blue-300">{filteredEntries.length}</span> memories
               </div>
             </div>
+            <button
+              onClick={() => setShowSearch(!showSearch)}
+              className="bg-black/60 backdrop-blur-md text-white p-3 rounded-full hover:bg-black/80 transition-colors"
+            >
+              <Search size={18} />
+            </button>
             <button
               onClick={() => setShowInfo(!showInfo)}
               className="bg-black/60 backdrop-blur-md text-white p-3 rounded-full hover:bg-black/80 transition-colors"
             >
-              <Info size={20} />
+              <Info size={18} />
             </button>
           </div>
 
-          {/* Info overlay */}
+          {showSearch && (
+            <div className="absolute top-20 left-4 right-4 z-10">
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search memories..."
+                  className="w-full bg-black/80 backdrop-blur-md text-white pl-12 pr-4 py-3 rounded-full border border-white/10 focus:border-blue-400/50 focus:outline-none"
+                  autoFocus
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                  >
+                    <X size={18} />
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
           {showInfo && (
             <div className="absolute inset-0 z-20 bg-black/80 backdrop-blur-sm flex items-center justify-center p-6">
               <div className="bg-black/90 backdrop-blur-md text-white p-6 rounded-2xl max-w-sm">
@@ -92,14 +149,13 @@ export default function VisualizationPage() {
                   <div>• <span className="text-blue-300">Blue spheres</span> are your memories</div>
                   <div>• <span className="text-yellow-300">Yellow nodes</span> are anchor words</div>
                   <div>• Tap a memory to read it</div>
-                  <div>• Pinch to zoom</div>
-                  <div>• Two fingers to rotate</div>
+                  <div>• Pinch to zoom, two fingers to rotate</div>
+                  <div>• Use search to filter memories</div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Memory details bottom sheet */}
           <MobileMemorySheet 
             entry={selectedEntryData}
             onClose={() => setSelectedEntry(null)}
@@ -107,14 +163,43 @@ export default function VisualizationPage() {
         </>
       ) : (
         <>
-          {/* Desktop: Full info panel */}
-          <div className="absolute top-6 left-6 z-10 bg-black/60 backdrop-blur-md text-white p-4 rounded-lg max-w-xs">
-            <h1 className="text-xl font-bold mb-2">🧠 Memory Network</h1>
-            <p className="text-sm text-gray-300 mb-3">
-              <span className="text-blue-300 font-semibold">{entries.length}</span> memories • 
+          <div className="absolute top-6 left-6 z-10 bg-black/60 backdrop-blur-md text-white p-5 rounded-xl max-w-xs border border-white/10">
+            <h1 className="text-xl font-bold mb-3 flex items-center gap-2">
+              🧠 Memory Network
+            </h1>
+            <p className="text-sm text-gray-300 mb-4">
+              <span className="text-blue-300 font-semibold">{filteredEntries.length}</span> memories • 
               <span className="text-yellow-300 font-semibold"> {totalAnchors}</span> anchors
             </p>
-            <div className="text-xs text-gray-400 space-y-1">
+            
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search memories..."
+                className="w-full bg-black/40 text-white pl-10 pr-3 py-2 rounded-lg border border-white/10 focus:border-blue-400/50 focus:outline-none text-sm"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+
+            <button
+              onClick={handleRandomMemory}
+              className="w-full bg-gradient-to-r from-blue-500/20 to-purple-500/20 hover:from-blue-500/30 hover:to-purple-500/30 border border-blue-400/30 text-blue-300 px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 mb-4"
+            >
+              <Sparkles size={16} />
+              Random Memory
+            </button>
+
+            <div className="text-xs text-gray-400 space-y-1.5 border-t border-white/10 pt-4">
               <div>• <span className="text-blue-300">Blue spheres</span> = Memories</div>
               <div>• <span className="text-yellow-300">Yellow nodes</span> = Anchor words</div>
               <div>• Click a memory to read it</div>
@@ -122,7 +207,19 @@ export default function VisualizationPage() {
             </div>
           </div>
 
-          {/* Memory details panel */}
+          {hoveredEntryData && !selectedEntry && (
+            <div className="absolute top-6 left-1/2 -translate-x-1/2 z-10 bg-black/80 backdrop-blur-md text-white px-4 py-2 rounded-lg max-w-xs text-center pointer-events-none">
+              <div className="text-sm font-semibold text-blue-300">{hoveredEntryData.anchor}</div>
+              <div className="text-xs text-gray-400 mt-1">
+                {new Date(hoveredEntryData.date).toLocaleDateString('en-US', { 
+                  month: 'short', 
+                  day: 'numeric', 
+                  year: 'numeric' 
+                })}
+              </div>
+            </div>
+          )}
+
           <DesktopInfoPanel 
             entry={selectedEntryData}
             onClose={() => setSelectedEntry(null)}
@@ -140,10 +237,14 @@ export default function VisualizationPage() {
           alpha: false,
           powerPreference: 'high-performance'
         }}
+        onCreated={({ camera, gl }) => {
+          cameraRef.current = camera;
+        }}
       >
         <color attach="background" args={['#0a0a0a']} />
         
-        {/* Simplified lighting for mobile */}
+        <Stars radius={100} depth={50} count={isMobile ? 1000 : 2000} factor={4} saturation={0} fade speed={1} />
+        
         <ambientLight intensity={isMobile ? 0.6 : 0.5} />
         <pointLight position={[10, 10, 10]} intensity={isMobile ? 0.8 : 1} />
         {!isMobile && (
@@ -153,16 +254,17 @@ export default function VisualizationPage() {
           </>
         )}
 
-        {/* Graph */}
         <NetworkGraph 
-          entries={entries}
+          entries={filteredEntries}
           selectedEntry={selectedEntry}
+          hoveredEntry={hoveredEntry}
           onSelectEntry={setSelectedEntry}
+          onHoverEntry={setHoveredEntry}
           isMobile={isMobile}
         />
 
-        {/* Touch-friendly controls */}
         <OrbitControls 
+          ref={controlsRef}
           enableDamping
           dampingFactor={0.05}
           rotateSpeed={isMobile ? 0.7 : 0.5}
@@ -174,9 +276,18 @@ export default function VisualizationPage() {
             TWO: THREE.TOUCH.DOLLY_PAN
           }}
         />
+
+        {!isMobile && (
+          <EffectComposer>
+            <Bloom 
+              intensity={0.5}
+              luminanceThreshold={0.4}
+              luminanceSmoothing={0.9}
+            />
+          </EffectComposer>
+        )}
       </Canvas>
 
-      {/* Add slide-up animation */}
       <style jsx global>{`
         @keyframes slide-up {
           from {

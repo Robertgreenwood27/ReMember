@@ -1,7 +1,9 @@
-import { useMemo } from 'react';
+// ConnectionLines.tsx
+import { useMemo, useRef } from 'react';
 import { Line } from '@react-three/drei';
 import { Entry } from '@/lib/types';
 import * as THREE from 'three';
+import { useFrame } from '@react-three/fiber';
 
 export function ConnectionLines({ 
   entries, 
@@ -17,7 +19,13 @@ export function ConnectionLines({
   isMobile: boolean;
 }) {
   const lines = useMemo(() => {
-    const result: Array<{ start: THREE.Vector3; end: THREE.Vector3; opacity: number; highlighted: boolean }> = [];
+    const result: Array<{ 
+      start: THREE.Vector3; 
+      end: THREE.Vector3; 
+      opacity: number; 
+      highlighted: boolean;
+      entryId: string;
+    }> = [];
     
     entries.forEach((entry) => {
       const entryPos = entryPositions.get(entry.id);
@@ -34,7 +42,8 @@ export function ConnectionLines({
           start: entryPos,
           end: anchorPos,
           opacity,
-          highlighted: isRelated
+          highlighted: isRelated,
+          entryId: entry.id
         });
       });
     });
@@ -45,15 +54,54 @@ export function ConnectionLines({
   return (
     <>
       {lines.map((line, i) => (
-        <Line
+        <AnimatedLine
           key={i}
-          points={[line.start, line.end]}
+          start={line.start}
+          end={line.end}
           color={line.highlighted ? '#4ecdc4' : '#666666'}
           lineWidth={line.highlighted ? 2.5 : 1}
-          transparent
           opacity={line.opacity}
+          highlighted={line.highlighted}
         />
       ))}
     </>
+  );
+}
+
+function AnimatedLine({ 
+  start, 
+  end, 
+  color, 
+  lineWidth, 
+  opacity,
+  highlighted 
+}: { 
+  start: THREE.Vector3;
+  end: THREE.Vector3;
+  color: string;
+  lineWidth: number;
+  opacity: number;
+  highlighted: boolean;
+}) {
+  const lineRef = useRef<any>(null);
+
+  useFrame(({ clock }) => {
+    if (lineRef.current && highlighted) {
+      const material = lineRef.current.material;
+      if (material) {
+        material.opacity = opacity * (0.8 + Math.sin(clock.getElapsedTime() * 3) * 0.2);
+      }
+    }
+  });
+
+  return (
+    <Line
+      ref={lineRef}
+      points={[start, end]}
+      color={color}
+      lineWidth={lineWidth}
+      transparent
+      opacity={opacity}
+    />
   );
 }

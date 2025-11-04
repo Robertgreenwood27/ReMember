@@ -1,3 +1,4 @@
+// NetworkGraph.tsx
 import { useMemo } from 'react';
 import { Entry } from '@/lib/types';
 import { useForceSimulation } from '../hooks/useForceSimulation';
@@ -7,13 +8,17 @@ import { ConnectionLines } from './ConnectionLines';
 
 export function NetworkGraph({ 
   entries, 
-  selectedEntry, 
+  selectedEntry,
+  hoveredEntry,
   onSelectEntry,
+  onHoverEntry,
   isMobile 
 }: { 
   entries: Entry[];
   selectedEntry: string | null;
+  hoveredEntry: string | null;
   onSelectEntry: (id: string | null) => void;
+  onHoverEntry: (id: string | null) => void;
   isMobile: boolean;
 }) {
   const { entryPositions, anchorPositions } = useForceSimulation(entries, isMobile);
@@ -37,7 +42,7 @@ export function NetworkGraph({
         entries={entries}
         entryPositions={entryPositions}
         anchorPositions={anchorPositions}
-        highlightedEntry={selectedEntry}
+        highlightedEntry={selectedEntry || hoveredEntry}
         isMobile={isMobile}
       />
       
@@ -45,8 +50,10 @@ export function NetworkGraph({
         const position = entryPositions.get(entry.id);
         if (!position) return null;
 
-        const isHighlighted = selectedEntry === entry.id;
-        const isDimmed = selectedEntry !== null && !isHighlighted;
+        const isSelected = selectedEntry === entry.id;
+        const isHovered = hoveredEntry === entry.id;
+        const isHighlighted = isSelected || isHovered;
+        const isDimmed = (selectedEntry !== null || hoveredEntry !== null) && !isHighlighted;
 
         return (
           <EntryNode
@@ -54,6 +61,8 @@ export function NetworkGraph({
             entry={entry}
             position={position}
             onClick={() => onSelectEntry(selectedEntry === entry.id ? null : entry.id)}
+            onHover={() => !isMobile && onHoverEntry(entry.id)}
+            onUnhover={() => !isMobile && onHoverEntry(null)}
             isHighlighted={isHighlighted}
             isDimmed={isDimmed}
             isMobile={isMobile}
@@ -63,8 +72,9 @@ export function NetworkGraph({
 
       {Array.from(anchorPositions.entries()).map(([word, position]) => {
         const parentEntries = anchorToEntries.get(word) || [];
-        const isHighlighted = selectedEntry ? parentEntries.includes(selectedEntry) : false;
-        const isDimmed = selectedEntry !== null && !isHighlighted;
+        const highlightId = selectedEntry || hoveredEntry;
+        const isHighlighted = highlightId ? parentEntries.includes(highlightId) : false;
+        const isDimmed = highlightId !== null && !isHighlighted;
 
         return (
           <AnchorNode
