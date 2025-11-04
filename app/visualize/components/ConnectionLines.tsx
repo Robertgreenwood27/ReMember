@@ -4,6 +4,7 @@ import { Line } from '@react-three/drei';
 import { Entry } from '@/lib/types';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
+import { Text } from '@react-three/drei';
 
 export function ConnectionLines({ 
   entries, 
@@ -18,8 +19,8 @@ export function ConnectionLines({
   highlightedEntry: string | null;
   isMobile: boolean;
 }) {
-  const lines = useMemo(() => {
-    const result: Array<{ 
+  const { nounLines, tagLines } = useMemo(() => {
+    const nounResult: Array<{ 
       start: THREE.Vector3; 
       end: THREE.Vector3; 
       opacity: number; 
@@ -27,6 +28,16 @@ export function ConnectionLines({
       entryId: string;
     }> = [];
     
+    const tagResult: Array<{
+      start: THREE.Vector3;
+      end: THREE.Vector3;
+      opacity: number;
+      highlighted: boolean;
+      tag: string;
+      midpoint: THREE.Vector3;
+    }> = [];
+    
+    // Noun-based connections (entry to anchor)
     entries.forEach((entry) => {
       const entryPos = entryPositions.get(entry.id);
       if (!entryPos) return;
@@ -38,7 +49,7 @@ export function ConnectionLines({
         const isRelated = highlightedEntry === entry.id;
         const opacity = highlightedEntry ? (isRelated ? 0.7 : 0.03) : (isMobile ? 0.2 : 0.3);
         
-        result.push({
+        nounResult.push({
           start: entryPos,
           end: anchorPos,
           opacity,
@@ -48,14 +59,53 @@ export function ConnectionLines({
       });
     });
 
-    return result;
+    // Tag-based connections (entry to entry)
+    const tagGroups = new Map<string, string[]>();
+    entries.forEach((entry) => {
+      if (entry.tags && entry.tags.length > 0) {
+        entry.tags.forEach((tag) => {
+          if (!tagGroups.has(tag)) {
+            tagGroups.set(tag, []);
+          }
+          tagGroups.get(tag)!.push(entry.id);
+        });
+      }
+    });
+
+    tagGroups.forEach((entryIds, tag) => {
+      if (entryIds.length < 2) return;
+      
+      for (let i = 0; i < entryIds.length; i++) {
+        for (let j = i + 1; j < entryIds.length; j++) {
+          const pos1 = entryPositions.get(entryIds[i]);
+          const pos2 = entryPositions.get(entryIds[j]);
+          
+          if (pos1 && pos2) {
+            const isRelated = highlightedEntry === entryIds[i] || highlightedEntry === entryIds[j];
+            const opacity = highlightedEntry ? (isRelated ? 0.9 : 0.05) : 0.6;
+            const midpoint = new THREE.Vector3().addVectors(pos1, pos2).multiplyScalar(0.5);
+            
+            tagResult.push({
+              start: pos1,
+              end: pos2,
+              opacity,
+              highlighted: isRelated,
+              tag,
+              midpoint
+            });
+          }
+        }
+      }
+    });
+
+    return { nounLines: nounResult, tagLines: tagResult };
   }, [entries, entryPositions, anchorPositions, highlightedEntry, isMobile]);
 
   return (
     <>
-      {lines.map((line, i) => (
+      {nounLines.map((line, i) => (
         <AnimatedLine
-          key={i}
+          key={`noun-${i}`}
           start={line.start}
           end={line.end}
           color={line.highlighted ? '#4ecdc4' : '#666666'}
@@ -63,6 +113,26 @@ export function ConnectionLines({
           opacity={line.opacity}
           highlighted={line.highlighted}
         />
+      ))}
+      
+      {tagLines.map((line, i) => (
+        <group key={`tag-${i}`}>
+          <AnimatedLine
+            start={line.start}
+            end={line.end}
+            color={line.highlighted ? '#ff3366' : '#ff6699'}
+            lineWidth={line.highlighted ? 4.5 : 3.5}
+            opacity={line.opacity}
+            highlighted={line.highlighted}
+          />
+          <TagLabel
+            position={line.midpoint}
+            tag={line.tag}
+            opacity={line.opacity}
+            highlighted={line.highlighted}
+            isMobile={isMobile}
+          />
+        </group>
       ))}
     </>
   );
@@ -103,5 +173,46 @@ function AnimatedLine({
       transparent
       opacity={opacity}
     />
+  );
+}
+
+function TagLabel({
+  position,
+  tag,
+  opacity,
+  highlighted,
+  isMobile
+}: {
+  position: THREE.Vector3;
+  tag: string;
+  opacity: number;
+  highlighted: boolean;
+  isMobile: boolean;
+}) {
+  const textRef = useRef<any>(null);
+
+  useFrame(({ camera }) => {
+    if (textRef.current) {
+      textRef.current.quaternion.copy(camera.quaternion);
+    }
+  });
+
+  const fontSize = isMobile ? 0.12 : 0.15;
+  const textOpacity = opacity * 0.9;
+
+  return (
+    <Text
+      ref={textRef}
+      position={position}
+      fontSize={fontSize}
+      color={highlighted ? '#ff99bb' : '#ff88aa'}
+      anchorX="center"
+      anchorY="middle"
+      outlineWidth={0.02}
+      outlineColor="#000000"
+      fillOpacity={textOpacity}
+    >
+      #{tag}
+    </Text>
   );
 }

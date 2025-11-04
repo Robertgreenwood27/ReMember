@@ -54,8 +54,9 @@ export function EntryNode({
   });
 
   const opacity = isDimmed ? 0.2 : 1;
-  const textOpacity = isDimmed ? 0.15 : 0.9;
+  const textOpacity = isDimmed ? 0.2 : 1;
   const color = isHighlighted ? '#ff6b6b' : '#88ccff';
+  const textColor = isHighlighted ? '#ffffff' : '#e0f0ff';
   const size = isMobile ? 0.35 : 0.4;
   const fontSize = isMobile ? 0.2 : 0.25;
   const labelOffset = isMobile ? 0.5 : 0.6;
@@ -108,10 +109,10 @@ export function EntryNode({
         ref={textRef}
         position={[0, labelOffset, 0]}
         fontSize={fontSize}
-        color={isHighlighted ? '#ff6b6b' : '#88ccff'}
+        color={textColor}
         anchorX="center"
         anchorY="middle"
-        outlineWidth={0.02}
+        outlineWidth={0.025}
         outlineColor="#000000"
         fillOpacity={textOpacity}
       >

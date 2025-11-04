@@ -59,8 +59,9 @@ export function AnchorNode({
 
   const size = Math.min(0.15 + count * 0.02, isMobile ? 0.25 : 0.3);
   const opacity = isDimmed ? 0.15 : 0.8;
-  const textOpacity = isDimmed ? 0.1 : 0.7;
+  const textOpacity = isDimmed ? 0.15 : 1;
   const color = isHighlighted ? '#4ecdc4' : '#ffd93d';
+  const textColor = isHighlighted ? '#ffffff' : '#fff8dc';
   const fontSize = isMobile ? 0.15 : 0.18;
   const labelOffset = isMobile ? 0.35 : 0.4;
 
@@ -104,10 +105,10 @@ export function AnchorNode({
         ref={textRef}
         position={[0, labelOffset, 0]}
         fontSize={fontSize}
-        color={isHighlighted ? '#4ecdc4' : '#ffd93d'}
+        color={textColor}
         anchorX="center"
         anchorY="middle"
-        outlineWidth={0.015}
+        outlineWidth={0.02}
         outlineColor="#000000"
         fillOpacity={textOpacity}
       >
