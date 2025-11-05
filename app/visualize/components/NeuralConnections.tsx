@@ -274,9 +274,9 @@ function PulsingLine({
 
   // TubeGeometry so it feels like a glowing cable
   const geometry = useMemo(() => {
-    const tubularSegments = Math.max(24, Math.floor(length * 8));
+    const tubularSegments = Math.max(8, Math.floor(length * 3));
     const radius = lineWidth * 0.008; // convert "px-ish" line width to world radius
-    const radialSegments = 8;
+    const radialSegments = 4;
 
     return new THREE.TubeGeometry(curve, tubularSegments, radius, radialSegments, false);
   }, [curve, lineWidth, length]);

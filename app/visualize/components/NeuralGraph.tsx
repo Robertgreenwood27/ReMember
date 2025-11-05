@@ -103,9 +103,9 @@ export function NeuralGraph({
       if (entry.tags) {
         entries.forEach((otherEntry) => {
           if (otherEntry.id !== activeId && otherEntry.tags) {
-            const sharedTags = entry.tags.filter((tag) =>
-              otherEntry.tags?.includes(tag)
-            );
+            const sharedTags = (entry.tags ?? []).filter((tag) =>
+  otherEntry.tags?.includes(tag)
+);
             if (sharedTags.length > 0) {
               newWaves.set(otherEntry.id, GRAPH_SETTINGS.tagWaveStart);
             }
