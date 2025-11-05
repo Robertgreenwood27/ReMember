@@ -1,3 +1,4 @@
+// hooks/useIsMobile.tsx
 import { useEffect, useState } from 'react';
 
 export function useIsMobile() {

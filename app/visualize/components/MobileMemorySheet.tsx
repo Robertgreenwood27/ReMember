@@ -1,6 +1,6 @@
-// MobileMemorySheet.tsx
+// components/MobileMemorySheet.tsx
 import { Entry } from '@/lib/types';
-import { X, Calendar, Tag } from 'lucide-react';
+import { X, Calendar, Tag, Brain } from 'lucide-react';
 
 export function MobileMemorySheet({ 
   entry, 
@@ -14,18 +14,21 @@ export function MobileMemorySheet({
   return (
     <>
       <div 
-        className="fixed inset-0 bg-black/60 z-40 animate-fade-in"
+        className="fixed inset-0 bg-black/70 z-40 animate-fade-in backdrop-blur-sm"
         onClick={onClose}
       />
       <div className="fixed inset-x-0 bottom-0 z-50 animate-slide-up">
-        <div className="bg-gradient-to-b from-black/95 to-black/98 backdrop-blur-xl text-white rounded-t-3xl p-6 max-h-[75vh] overflow-y-auto border-t border-white/20">
-          <div className="w-12 h-1 bg-white/30 rounded-full mx-auto mb-6" />
+        <div className="bg-gradient-to-b from-black/98 to-black/95 backdrop-blur-2xl text-white rounded-t-3xl p-6 max-h-[80vh] overflow-y-auto border-t border-cyan-500/30 shadow-2xl shadow-cyan-500/20">
+          <div className="w-12 h-1 bg-gradient-to-r from-cyan-500/50 to-purple-500/50 rounded-full mx-auto mb-6" />
           
           <div className="flex items-start justify-between mb-5">
             <div className="flex-1">
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-300 bg-clip-text text-transparent mb-2">
-                {entry.anchor}
-              </h2>
+              <div className="flex items-center gap-2 mb-2">
+                <Brain size={18} className="text-cyan-400" />
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
+                  {entry.anchor}
+                </h2>
+              </div>
               <div className="flex items-center gap-2 text-sm text-gray-400">
                 <Calendar size={14} />
                 <span>
@@ -49,10 +52,29 @@ export function MobileMemorySheet({
             {entry.text}
           </p>
           
+          {entry.tags && entry.tags.length > 0 && (
+            <div className="border-t border-white/10 pt-5 mb-5">
+              <div className="flex items-center gap-2 mb-3 text-sm text-gray-400">
+                <Tag size={16} className="text-pink-400" />
+                <span>Emotional Tags</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {entry.tags.map((tag, i) => (
+                  <span 
+                    key={i}
+                    className="px-4 py-2 bg-gradient-to-r from-pink-500/20 to-purple-600/20 text-pink-300 rounded-full text-sm font-medium border border-pink-500/30"
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          
           <div className="border-t border-white/10 pt-5">
             <div className="flex items-center gap-2 mb-3 text-sm text-gray-400">
-              <Tag size={16} />
-              <span>Connected Anchors</span>
+              <Brain size={16} className="text-yellow-400" />
+              <span>Neural Anchors</span>
             </div>
             <div className="flex flex-wrap gap-2">
               {entry.nouns.map((noun, i) => (

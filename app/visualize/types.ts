@@ -1,3 +1,4 @@
+// types.ts
 import { Entry } from '@/lib/types';
 import * as THREE from 'three';
 
@@ -11,4 +12,12 @@ export interface AnchorNode {
   word: string;
   position: THREE.Vector3;
   parentEntries: string[];
+}
+
+export interface NeuralConnection {
+  start: THREE.Vector3;
+  end: THREE.Vector3;
+  type: 'noun' | 'tag';
+  highlighted: boolean;
+  opacity: number;
 }
