@@ -10,7 +10,7 @@ import { Text } from '@react-three/drei';
    🎛️ CONNECTION SETTINGS PANEL
    ============================== */
 const CONNECTION_SETTINGS = {
-  // 🎨 Colors — cool desaturated neutrals with warm highlights
+  // 🎨 Colors – cool desaturated neutrals with warm highlights
   nounLineColor: '#3a4a54',          // deep blue-gray
   nounHighlightColor: '#8cbec9',     // pale cyan glow
   tagLineColor: '#7e6550',           // muted bronze-brown
@@ -18,7 +18,7 @@ const CONNECTION_SETTINGS = {
   tagTextColor: '#a48a6b',           // warm desaturated sand
   tagTextHighlightColor: '#e2cf9e',  // light amber for legibility
 
-  // 🌈 Opacity — balanced translucency
+  // 🌈 Opacity – balanced translucency
   nounOpacityDefault: 0.30,
   nounOpacityMobile: 0.22,
   nounOpacityHighlighted: 0.72,
@@ -28,25 +28,31 @@ const CONNECTION_SETTINGS = {
   tagOpacityHighlighted: 0.90,
   tagOpacityDimmed: 0.05,
 
-  // 💫 Pulse & Glow — float-safe numeric values
+  // 💫 Pulse & Glow – float-safe numeric values
   nounPulseSpeed: { base: 0.20, highlighted: 0.45 },
   tagPulseSpeed: { base: 0.25, highlighted: 0.60 },
-  pulseWidth: 0.10,            // controls how thick the pulse wave is
-  pulseBrightness: 2.4,        // overall brightness multiplier
-  baseBrightness: 0.35,        // baseline emission intensity
+  pulseWidth: 0.10,
+  pulseBrightness: 2.4,
+  baseBrightness: 0.35,
 
-  // 🧩 Line Width — slightly thinner for subtlety
+  // 🧩 Line Width
   nounLineWidth: { base: 1.4, highlighted: 2.4 },
   tagLineWidth: { base: 3.2, highlighted: 4.4 },
 
-  // 📝 Label — smaller and softer
+  // 🏷️ Label
   fontSize: { desktop: 0.14, mobile: 0.11 },
   labelOutline: 0.018,
   labelOpacityMultiplier: 0.90,
+
+  // ⚡ Performance
+  cullOpacityThreshold: 0.02,     // Don't render if below this
+  maxHighlightedLines: 50,        // Use fancy rendering for N highlighted lines max
+  simplifiedSegments: 2,          // Segments for simple lines
+  fancySegments: 8,               // Segments for highlighted lines
 };
 
 /* ==============================
-   🧠 NeuralConnections Component
+   🧠 NeuralConnections Component (OPTIMIZED)
    ============================== */
 export function NeuralConnections({ 
   entries, 
@@ -81,7 +87,7 @@ export function NeuralConnections({
       length: number;
     }> = [];
 
-    // Noun-based connections (entry → anchor)
+    // Noun-based connections
     entries.forEach((entry) => {
       const entryPos = entryPositions.get(entry.id);
       if (!entryPos) return;
@@ -99,6 +105,9 @@ export function NeuralConnections({
               ? CONNECTION_SETTINGS.nounOpacityMobile
               : CONNECTION_SETTINGS.nounOpacityDefault);
 
+        // Cull invisible lines early
+        if (opacity < CONNECTION_SETTINGS.cullOpacityThreshold) return;
+
         const length = entryPos.distanceTo(anchorPos);
 
         nounResult.push({
@@ -112,7 +121,7 @@ export function NeuralConnections({
       });
     });
 
-    // Tag-based connections (entry ↔ entry)
+    // Tag-based connections
     const tagGroups = new Map<string, string[]>();
     entries.forEach((entry) => {
       if (entry.tags && entry.tags.length > 0) {
@@ -141,6 +150,9 @@ export function NeuralConnections({
                 : CONNECTION_SETTINGS.tagOpacityDimmed)
             : CONNECTION_SETTINGS.tagOpacityDefault;
 
+          // Cull invisible lines
+          if (opacity < CONNECTION_SETTINGS.cullOpacityThreshold) return;
+
           const midpoint = new THREE.Vector3()
             .addVectors(pos1, pos2)
             .multiplyScalar(0.5);
@@ -162,75 +174,96 @@ export function NeuralConnections({
     return { nounLines: nounResult, tagLines: tagResult };
   }, [entries, entryPositions, anchorPositions, highlightedEntry, isMobile]);
 
+  // Separate highlighted from non-highlighted
+  const highlightedNounLines = useMemo(
+    () => nounLines.filter(l => l.highlighted).slice(0, CONNECTION_SETTINGS.maxHighlightedLines),
+    [nounLines]
+  );
+  const simpleNounLines = useMemo(
+    () => nounLines.filter(l => !l.highlighted),
+    [nounLines]
+  );
+
+  const highlightedTagLines = useMemo(
+    () => tagLines.filter(l => l.highlighted).slice(0, CONNECTION_SETTINGS.maxHighlightedLines),
+    [tagLines]
+  );
+  const simpleTagLines = useMemo(
+    () => tagLines.filter(l => !l.highlighted),
+    [tagLines]
+  );
+
   return (
     <>
-      {/* 🧬 Noun Connections */}
-      {nounLines.map((line, i) => (
-        <PulsingLine
-          key={`noun-${i}`}
+      {/* 🔥 FANCY: Highlighted Noun Connections */}
+      {highlightedNounLines.map((line, i) => (
+        <FancyPulsingLine
+          key={`noun-fancy-${i}`}
           start={line.start}
           end={line.end}
-          color={
-            line.highlighted
-              ? new THREE.Color(CONNECTION_SETTINGS.nounHighlightColor)
-              : new THREE.Color(CONNECTION_SETTINGS.nounLineColor)
-          }
+          color={new THREE.Color(CONNECTION_SETTINGS.nounHighlightColor)}
           opacity={line.opacity}
-          pulseSpeed={
-            line.highlighted
-              ? CONNECTION_SETTINGS.nounPulseSpeed.highlighted
-              : CONNECTION_SETTINGS.nounPulseSpeed.base
-          }
-          lineWidth={
-            line.highlighted
-              ? CONNECTION_SETTINGS.nounLineWidth.highlighted
-              : CONNECTION_SETTINGS.nounLineWidth.base
-          }
+          pulseSpeed={CONNECTION_SETTINGS.nounPulseSpeed.highlighted}
+          lineWidth={CONNECTION_SETTINGS.nounLineWidth.highlighted}
           length={line.length}
         />
       ))}
 
-      {/* 🏷️ Tag Connections */}
-      {tagLines.map((line, i) => (
-        <group key={`tag-${i}`}>
-          <PulsingLine
+      {/* ⚡ SIMPLE: Non-highlighted Noun Connections (batched) */}
+      <SimpleLinesInstanced
+        lines={simpleNounLines}
+        color={new THREE.Color(CONNECTION_SETTINGS.nounLineColor)}
+        lineWidth={CONNECTION_SETTINGS.nounLineWidth.base}
+      />
+
+      {/* 🔥 FANCY: Highlighted Tag Connections */}
+      {highlightedTagLines.map((line, i) => (
+        <group key={`tag-fancy-${i}`}>
+          <FancyPulsingLine
             start={line.start}
             end={line.end}
-            color={
-              line.highlighted
-                ? new THREE.Color(CONNECTION_SETTINGS.tagHighlightColor)
-                : new THREE.Color(CONNECTION_SETTINGS.tagLineColor)
-            }
+            color={new THREE.Color(CONNECTION_SETTINGS.tagHighlightColor)}
             opacity={line.opacity}
-            pulseSpeed={
-              line.highlighted
-                ? CONNECTION_SETTINGS.tagPulseSpeed.highlighted
-                : CONNECTION_SETTINGS.tagPulseSpeed.base
-            }
-            lineWidth={
-              line.highlighted
-                ? CONNECTION_SETTINGS.tagLineWidth.highlighted
-                : CONNECTION_SETTINGS.tagLineWidth.base
-            }
+            pulseSpeed={CONNECTION_SETTINGS.tagPulseSpeed.highlighted}
+            lineWidth={CONNECTION_SETTINGS.tagLineWidth.highlighted}
             length={line.length}
           />
           <TagLabel
             position={line.midpoint}
             tag={line.tag}
             opacity={line.opacity}
-            highlighted={line.highlighted}
+            highlighted={true}
             isMobile={isMobile}
           />
         </group>
+      ))}
+
+      {/* ⚡ SIMPLE: Non-highlighted Tag Connections (batched) */}
+      <SimpleLinesInstanced
+        lines={simpleTagLines}
+        color={new THREE.Color(CONNECTION_SETTINGS.tagLineColor)}
+        lineWidth={CONNECTION_SETTINGS.tagLineWidth.base}
+      />
+
+      {/* Labels for simple tag lines */}
+      {simpleTagLines.map((line, i) => (
+        <TagLabel
+          key={`tag-label-${i}`}
+          position={line.midpoint}
+          tag={line.tag}
+          opacity={line.opacity}
+          highlighted={false}
+          isMobile={isMobile}
+        />
       ))}
     </>
   );
 }
 
 /* ==============================
-   ⚡ Pulsing Line
+   🔥 FANCY Pulsing Line (for highlighted only)
    ============================== */
-function PulsingLine({
+function FancyPulsingLine({
   start,
   end,
   color,
@@ -249,43 +282,38 @@ function PulsingLine({
 }) {
   const materialRef = useRef<THREE.ShaderMaterial | null>(null);
 
-  // Slightly curved Catmull-Rom spline instead of a dead-straight line
   const curve = useMemo(() => {
     const a = start.clone();
     const b = end.clone();
     const mid = new THREE.Vector3().addVectors(a, b).multiplyScalar(0.5);
-
     const dir = new THREE.Vector3().subVectors(b, a).normalize();
     const up = new THREE.Vector3(0, 1, 0);
     const side = new THREE.Vector3().crossVectors(dir, up);
 
     if (side.lengthSq() < 0.0001) {
-      // Fallback if direction is almost vertical
       side.set(1, 0, 0);
     } else {
       side.normalize();
     }
 
-    const bendAmount = Math.min(1.0, length * 0.12); // adjust to taste
+    const bendAmount = Math.min(1.0, length * 0.12);
     mid.addScaledVector(side, bendAmount);
 
     return new THREE.CatmullRomCurve3([a, mid, b]);
   }, [start, end, length]);
 
-  // TubeGeometry so it feels like a glowing cable
   const geometry = useMemo(() => {
-    const tubularSegments = Math.max(8, Math.floor(length * 3));
-    const radius = lineWidth * 0.008; // convert "px-ish" line width to world radius
+    const tubularSegments = CONNECTION_SETTINGS.fancySegments;
+    const radius = lineWidth * 0.008;
     const radialSegments = 4;
-
     return new THREE.TubeGeometry(curve, tubularSegments, radius, radialSegments, false);
-  }, [curve, lineWidth, length]);
+  }, [curve, lineWidth]);
 
   const material = useMemo(() => {
     const mat = new THREE.ShaderMaterial({
       uniforms: {
         time: { value: 0 },
-        color: { value: new THREE.Color(color) },
+        color: { value: color.clone() },
         pulseSpeed: { value: pulseSpeed },
         opacity: { value: opacity },
       },
@@ -294,10 +322,8 @@ function PulsingLine({
         varying float vRadial;
 
         void main() {
-          // TubeGeometry gives us uv.x along the length, uv.y around the circumference
           vAlong = uv.x;
           vRadial = uv.y;
-
           vec4 worldPos = modelMatrix * vec4(position, 1.0);
           gl_Position = projectionMatrix * viewMatrix * worldPos;
         }
@@ -312,11 +338,9 @@ function PulsingLine({
         varying float vRadial;
 
         void main() {
-          // Center vs edge of the tube for core/halo effect
           float radialCenter = 1.0 - abs(vRadial * 2.0 - 1.0);
           float core = smoothstep(0.2, 1.0, radialCenter);
 
-          // Two pulses traveling along the cable
           float head1 = fract(time * pulseSpeed);
           float head2 = fract(time * pulseSpeed * 0.6 + 0.35);
 
@@ -328,12 +352,8 @@ function PulsingLine({
           float wave2 = smoothstep(pulseWidth, 0.0, d2);
           float pulses = max(wave1, wave2);
 
-          // Base glow along entire line (so it's always visible)
           float baseGlow = 0.20 + 0.30 * core;
-
-          // Extra intensity where the pulses are
           float pulseGlow = pulses * (1.5 + core);
-
           float glow = baseGlow + pulseGlow;
 
           vec3 lineColor = color * (0.4 + glow * 2.4);
@@ -356,14 +376,112 @@ function PulsingLine({
   useFrame(({ clock }) => {
     if (materialRef.current) {
       materialRef.current.uniforms.time.value = clock.getElapsedTime();
-      materialRef.current.uniforms.opacity.value = opacity;
-      materialRef.current.uniforms.pulseSpeed.value = pulseSpeed;
     }
   });
 
   return <mesh geometry={geometry} material={material} />;
 }
 
+/* ==============================
+   ⚡ SIMPLE Instanced Lines (batched rendering)
+   ============================== */
+function SimpleLinesInstanced({
+  lines,
+  color,
+  lineWidth,
+}: {
+  lines: Array<{ start: THREE.Vector3; end: THREE.Vector3; opacity: number; length: number }>;
+  color: THREE.Color;
+  lineWidth: number;
+}) {
+  const groupRef = useRef<THREE.Group>(null);
+
+  const { geometry, material, instancedMesh } = useMemo(() => {
+    if (lines.length === 0) return { geometry: null, material: null, instancedMesh: null };
+
+    // Create a simple line segment geometry
+    const points: THREE.Vector3[] = [];
+    const opacities: number[] = [];
+
+    lines.forEach(line => {
+      // Simple straight line (no curve for performance)
+      const segments = CONNECTION_SETTINGS.simplifiedSegments;
+      for (let i = 0; i <= segments; i++) {
+        const t = i / segments;
+        const point = new THREE.Vector3().lerpVectors(line.start, line.end, t);
+        points.push(point);
+        opacities.push(line.opacity);
+      }
+    });
+
+    const geo = new THREE.BufferGeometry().setFromPoints(points);
+    const opacityArray = new Float32Array(opacities);
+    geo.setAttribute('opacity', new THREE.BufferAttribute(opacityArray, 1));
+
+    const mat = new THREE.LineBasicMaterial({
+      color: color,
+      transparent: true,
+      opacity: 0.3,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      linewidth: lineWidth, // Note: only works in some WebGL contexts
+    });
+
+    // For better performance, use custom shader with opacity per vertex
+    const shaderMat = new THREE.ShaderMaterial({
+      uniforms: {
+        color: { value: color },
+        time: { value: 0 },
+      },
+      vertexShader: `
+        attribute float opacity;
+        varying float vOpacity;
+
+        void main() {
+          vOpacity = opacity;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 color;
+        uniform float time;
+        varying float vOpacity;
+
+        void main() {
+          // Subtle pulse
+          float pulse = 0.8 + 0.2 * sin(time * 0.5);
+          vec3 finalColor = color * pulse;
+          float alpha = vOpacity * 0.6;
+          
+          if (alpha < 0.02) discard;
+          
+          gl_FragColor = vec4(finalColor, alpha);
+        }
+      `,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+
+    return { geometry: geo, material: shaderMat, instancedMesh: null };
+  }, [lines, color, lineWidth]);
+
+  const materialRef = useRef<THREE.ShaderMaterial | null>(null);
+
+  useFrame(({ clock }) => {
+    if (material && 'uniforms' in material && material.uniforms.time) {
+      material.uniforms.time.value = clock.getElapsedTime();
+    }
+  });
+
+  if (!geometry || !material) return null;
+
+  return (
+    <group ref={groupRef}>
+      <lineSegments geometry={geometry} material={material} />
+    </group>
+  );
+}
 
 /* ==============================
    🏷️ Tag Label
@@ -391,6 +509,9 @@ function TagLabel({
     ? CONNECTION_SETTINGS.fontSize.mobile
     : CONNECTION_SETTINGS.fontSize.desktop;
   const textOpacity = opacity * CONNECTION_SETTINGS.labelOpacityMultiplier;
+
+  // Cull labels that are too dim
+  if (textOpacity < 0.1) return null;
 
   return (
     <Text
