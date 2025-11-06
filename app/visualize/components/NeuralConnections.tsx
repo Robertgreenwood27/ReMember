@@ -20,13 +20,14 @@ const CONNECTION_SETTINGS = {
 
   // 🌈 Opacity – balanced translucency
   nounOpacityDefault: 0.30,
-  nounOpacityMobile: 0.22,
-  nounOpacityHighlighted: 0.72,
-  nounOpacityDimmed: 0.05,
+  nounOpacityMobile: 0.45,        // 📱 Increased for mobile visibility
+  nounOpacityHighlighted: 0.85,   // 📱 More visible when highlighted
+  nounOpacityDimmed: 0.08,        // 📱 Less aggressive dimming on mobile
 
   tagOpacityDefault: 0.55,
-  tagOpacityHighlighted: 0.90,
-  tagOpacityDimmed: 0.05,
+  tagOpacityMobile: 0.65,         // 📱 More visible on mobile
+  tagOpacityHighlighted: 0.95,
+  tagOpacityDimmed: 0.08,
 
   // 💫 Pulse & Glow – float-safe numeric values
   nounPulseSpeed: { base: 0.20, highlighted: 0.45 },
@@ -36,8 +37,8 @@ const CONNECTION_SETTINGS = {
   baseBrightness: 0.35,
 
   // 🧩 Line Width
-  nounLineWidth: { base: 1.4, highlighted: 2.4 },
-  tagLineWidth: { base: 3.2, highlighted: 4.4 },
+  nounLineWidth: { base: 1.4, highlighted: 2.4, mobile: 2.2, mobileHighlighted: 3.5 },
+  tagLineWidth: { base: 3.2, highlighted: 4.4, mobile: 4.0, mobileHighlighted: 5.5 },
 
   // 🏷️ Label
   fontSize: { desktop: 0.14, mobile: 0.11 },
@@ -148,7 +149,9 @@ export function NeuralConnections({
             ? (isRelated
                 ? CONNECTION_SETTINGS.tagOpacityHighlighted
                 : CONNECTION_SETTINGS.tagOpacityDimmed)
-            : CONNECTION_SETTINGS.tagOpacityDefault;
+            : (isMobile
+                ? CONNECTION_SETTINGS.tagOpacityMobile
+                : CONNECTION_SETTINGS.tagOpacityDefault);
 
           // Cull invisible lines
           if (opacity < CONNECTION_SETTINGS.cullOpacityThreshold) return;
@@ -204,7 +207,7 @@ export function NeuralConnections({
           color={new THREE.Color(CONNECTION_SETTINGS.nounHighlightColor)}
           opacity={line.opacity}
           pulseSpeed={CONNECTION_SETTINGS.nounPulseSpeed.highlighted}
-          lineWidth={CONNECTION_SETTINGS.nounLineWidth.highlighted}
+          lineWidth={isMobile ? CONNECTION_SETTINGS.nounLineWidth.mobileHighlighted : CONNECTION_SETTINGS.nounLineWidth.highlighted}
           length={line.length}
         />
       ))}
@@ -213,7 +216,7 @@ export function NeuralConnections({
       <SimpleLinesInstanced
         lines={simpleNounLines}
         color={new THREE.Color(CONNECTION_SETTINGS.nounLineColor)}
-        lineWidth={CONNECTION_SETTINGS.nounLineWidth.base}
+        lineWidth={isMobile ? CONNECTION_SETTINGS.nounLineWidth.mobile : CONNECTION_SETTINGS.nounLineWidth.base}
       />
 
       {/* 🔥 FANCY: Highlighted Tag Connections */}
@@ -225,7 +228,7 @@ export function NeuralConnections({
             color={new THREE.Color(CONNECTION_SETTINGS.tagHighlightColor)}
             opacity={line.opacity}
             pulseSpeed={CONNECTION_SETTINGS.tagPulseSpeed.highlighted}
-            lineWidth={CONNECTION_SETTINGS.tagLineWidth.highlighted}
+            lineWidth={isMobile ? CONNECTION_SETTINGS.tagLineWidth.mobileHighlighted : CONNECTION_SETTINGS.tagLineWidth.highlighted}
             length={line.length}
           />
           <TagLabel
@@ -242,7 +245,7 @@ export function NeuralConnections({
       <SimpleLinesInstanced
         lines={simpleTagLines}
         color={new THREE.Color(CONNECTION_SETTINGS.tagLineColor)}
-        lineWidth={CONNECTION_SETTINGS.tagLineWidth.base}
+        lineWidth={isMobile ? CONNECTION_SETTINGS.tagLineWidth.mobile : CONNECTION_SETTINGS.tagLineWidth.base}
       />
 
       {/* Labels for simple tag lines */}
