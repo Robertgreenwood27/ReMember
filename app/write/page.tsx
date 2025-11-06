@@ -7,10 +7,10 @@ import { loadData } from '@/lib/storage-supabase';
 import { Entry } from '@/lib/types';
 import * as THREE from 'three';
 import { Info, Search, X, Sparkles, Brain, Zap } from 'lucide-react';
-import { useIsMobile } from './hooks/useIsMobile';
-import { NeuralGraph } from './components/NeuralGraph';
-import { MobileMemorySheet } from './components/MobileMemorySheet';
-import { DesktopInfoPanel } from './components/DesktopInfoPanel';
+import { useIsMobile } from '../visualize/hooks/useIsMobile';
+import { NeuralGraph } from '../visualize/components/NeuralGraph';
+import { MobileMemorySheet } from '../visualize/components/MobileMemorySheet';
+import { DesktopInfoPanel } from '../visualize/components/DesktopInfoPanel';
 import { EffectComposer, Bloom, ChromaticAberration } from '@react-three/postprocessing';
 import { BlendFunction } from 'postprocessing';
 
