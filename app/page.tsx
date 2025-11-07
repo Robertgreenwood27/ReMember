@@ -122,7 +122,7 @@ export default function DreamHome() {
               {symbolsWithDreams.map((s) => (
                 <li key={s}>
                   <Link
-                    href={`/memories?symbol=${encodeURIComponent(s)}`}
+                    href={`/dreams?symbol=${encodeURIComponent(s)}`}
                     className="text-sm text-zinc-400 hover:text-white transition-colors"
                   >
                     {s}
@@ -156,7 +156,7 @@ export default function DreamHome() {
                     {symbolsWithDreams.map((s) => (
                       <li key={s}>
                         <Link
-                          href={`/memories?symbol=${encodeURIComponent(s)}`}
+                          href={`/dreams?symbol=${encodeURIComponent(s)}`}
                           className="block text-sm text-zinc-400 hover:text-white transition"
                           onClick={() => setMenuOpen(false)}
                         >
@@ -178,7 +178,24 @@ export default function DreamHome() {
             <p className="text-sm sm:text-base text-zinc-400 italic">
               A dream map of your subconscious.
             </p>
+            {/* Action buttons */}
+              <div className="text-center mt-8 flex flex-wrap justify-center gap-3 mb-30">
+                <button
+                  onClick={handleNewAnchor}
+                  className="px-6 py-2 text-sm bg-zinc-900 border border-zinc-700 text-zinc-300 rounded-full hover:bg-zinc-800 transition"
+                >
+                  + New Symbol
+                </button>
+                <Link
+                  href="/visualize"
+                  className="px-6 py-2 text-sm bg-white text-black rounded-full hover:bg-zinc-200 transition"
+                >
+                  Enter the Dream Map
+                </Link>
+              </div>
           </header>
+
+          
 
           {/* Info panel */}
           <details
@@ -236,22 +253,6 @@ export default function DreamHome() {
                     <span className="text-xs text-zinc-700 ml-1">{node.count}</span>
                   </span>
                 ))}
-              </div>
-
-              {/* Action buttons */}
-              <div className="text-center mt-8 flex flex-wrap justify-center gap-3">
-                <button
-                  onClick={handleNewAnchor}
-                  className="px-6 py-2 text-sm bg-zinc-900 border border-zinc-700 text-zinc-300 rounded-full hover:bg-zinc-800 transition"
-                >
-                  + New Symbol
-                </button>
-                <Link
-                  href="/visualize"
-                  className="px-6 py-2 text-sm bg-white text-black rounded-full hover:bg-zinc-200 transition"
-                >
-                  Enter the Dream Map
-                </Link>
               </div>
             </>
           )}
