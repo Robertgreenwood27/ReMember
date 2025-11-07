@@ -386,7 +386,7 @@ function FancyPulsingLine({
 }
 
 /* ==============================
-   ⚡ SIMPLE Instanced Lines (batched rendering)
+   ⚡ SIMPLE Lines (dynamic + safe)
    ============================== */
 function SimpleLinesInstanced({
   lines,
@@ -399,92 +399,63 @@ function SimpleLinesInstanced({
 }) {
   const groupRef = useRef<THREE.Group>(null);
 
-  const { geometry, material, instancedMesh } = useMemo(() => {
-    if (lines.length === 0) return { geometry: null, material: null, instancedMesh: null };
-
-    // Create a simple line segment geometry
-    const points: THREE.Vector3[] = [];
-    const opacities: number[] = [];
-
-    lines.forEach(line => {
-      // Simple straight line (no curve for performance)
-      const segments = CONNECTION_SETTINGS.simplifiedSegments;
-      for (let i = 0; i <= segments; i++) {
-        const t = i / segments;
-        const point = new THREE.Vector3().lerpVectors(line.start, line.end, t);
-        points.push(point);
-        opacities.push(line.opacity);
-      }
-    });
-
-    const geo = new THREE.BufferGeometry().setFromPoints(points);
-    const opacityArray = new Float32Array(opacities);
-    geo.setAttribute('opacity', new THREE.BufferAttribute(opacityArray, 1));
-
-    const mat = new THREE.LineBasicMaterial({
-      color: color,
-      transparent: true,
-      opacity: 0.3,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-      linewidth: lineWidth, // Note: only works in some WebGL contexts
-    });
-
-    // For better performance, use custom shader with opacity per vertex
-    const shaderMat = new THREE.ShaderMaterial({
-      uniforms: {
-        color: { value: color },
-        time: { value: 0 },
-      },
-      vertexShader: `
-        attribute float opacity;
-        varying float vOpacity;
-
-        void main() {
-          vOpacity = opacity;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `,
-      fragmentShader: `
-        uniform vec3 color;
-        uniform float time;
-        varying float vOpacity;
-
-        void main() {
-          // Subtle pulse
-          float pulse = 0.8 + 0.2 * sin(time * 0.5);
-          vec3 finalColor = color * pulse;
-          float alpha = vOpacity * 0.6;
-          
-          if (alpha < 0.02) discard;
-          
-          gl_FragColor = vec4(finalColor, alpha);
-        }
-      `,
-      transparent: true,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-    });
-
-    return { geometry: geo, material: shaderMat, instancedMesh: null };
-  }, [lines, color, lineWidth]);
-
-  const materialRef = useRef<THREE.ShaderMaterial | null>(null);
-
   useFrame(({ clock }) => {
-    if (material && 'uniforms' in material && material.uniforms.time) {
-      material.uniforms.time.value = clock.getElapsedTime();
+    // Rotate subtle pulse over time
+    if (groupRef.current) {
+      groupRef.current.traverse((child: any) => {
+        if (child.material?.uniforms) {
+          child.material.uniforms.time.value = clock.getElapsedTime();
+        }
+      });
     }
   });
 
-  if (!geometry || !material) return null;
-
   return (
     <group ref={groupRef}>
-      <lineSegments geometry={geometry} material={material} />
+      {lines.map((line, i) => {
+        // Guard against invalid positions
+        if (
+          !line.start ||
+          !line.end ||
+          !Number.isFinite(line.start.x) ||
+          !Number.isFinite(line.end.x)
+        ) {
+          return null;
+        }
+
+        const points = [line.start, line.end];
+        const geo = new THREE.BufferGeometry().setFromPoints(points);
+
+        const mat = new THREE.ShaderMaterial({
+          uniforms: {
+            color: { value: color },
+            time: { value: 0 },
+          },
+          vertexShader: `
+            void main() {
+              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+          `,
+          fragmentShader: `
+            uniform vec3 color;
+            uniform float time;
+            void main() {
+              float pulse = 0.85 + 0.25 * sin(time * 0.6);
+              vec3 finalColor = color * pulse * 1.4;
+              gl_FragColor = vec4(finalColor, 0.9);
+            }
+          `,
+          transparent: true,
+          blending: THREE.NormalBlending,
+          depthWrite: false,
+        });
+
+        return <line key={i} geometry={geo} material={mat} />;
+      })}
     </group>
   );
 }
+
 
 /* ==============================
    🏷️ Tag Label
