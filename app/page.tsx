@@ -226,7 +226,7 @@ export default function DreamHome() {
           ) : (
             <>
               {/* Symbol cloud */}
-              <div className="flex flex-wrap justify-center gap-4 mb-10 text-center select-none">
+              <div className="flex flex-wrap justify-center gap-4 mb-10 text-center">
                 {nodes.map((node) => (
                   <span
                     key={node.word}
