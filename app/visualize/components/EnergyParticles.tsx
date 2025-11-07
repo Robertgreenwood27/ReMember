@@ -10,8 +10,8 @@ import { Entry } from '@/lib/types';
    ============================== */
 const PARTICLE_SETTINGS = {
   // ✨ Particle Counts
-  countDesktop: 150,
-  countMobile: 80,
+  countDesktop: 100,
+  countMobile: 40,
 
   // 🎨 Colors
   colorDefault: '#3b4a56',
@@ -39,7 +39,6 @@ const PARTICLE_SETTINGS = {
   // 🔧 Behavior
   highlightProximity: 0.12,
 };
-
 
 /* ==============================
    ⚡ EnergyParticles Component
@@ -72,6 +71,9 @@ export function EnergyParticles({
   const particlesRef = useRef<THREE.Points>(null);
   const particlesData = useRef<Particle[]>([]);
 
+  /* ==============================
+     🧩 Initialize Geometry + Material
+     ============================== */
   const { geometry, material } = useMemo(() => {
     const particleCount = isMobile
       ? PARTICLE_SETTINGS.countMobile
@@ -91,37 +93,22 @@ export function EnergyParticles({
 
       entry.nouns.forEach((noun) => {
         if (particleIndex >= particleCount) return;
-
         const symbolPos = symbolPositions.get(noun);
         if (!symbolPos) return;
 
-        const isHighlighted = highlightedEntry === entry.id;
-        const particleColor = new THREE.Color(
-          isHighlighted
-            ? PARTICLE_SETTINGS.colorHighlight
-            : PARTICLE_SETTINGS.colorDefault
-        );
-
+        const color = new THREE.Color(PARTICLE_SETTINGS.colorDefault);
         const particle: Particle = {
           position: entryPos.clone(),
           velocity: new THREE.Vector3(),
           startPos: entryPos.clone(),
           endPos: symbolPos.clone(),
           progress: Math.random(),
-          speed: isHighlighted
-            ? PARTICLE_SETTINGS.speedHighlight
-            : PARTICLE_SETTINGS.speedDefault,
-          color: particleColor,
-          size: isHighlighted
-            ? isMobile
-              ? PARTICLE_SETTINGS.sizeHighlight.mobile
-              : PARTICLE_SETTINGS.sizeHighlight.desktop
-            : isMobile
+          speed: PARTICLE_SETTINGS.speedDefault,
+          color,
+          size: isMobile
             ? PARTICLE_SETTINGS.sizeDefault.mobile
             : PARTICLE_SETTINGS.sizeDefault.desktop,
-          opacity: isHighlighted
-            ? PARTICLE_SETTINGS.opacityHighlight
-            : PARTICLE_SETTINGS.opacityDefault,
+          opacity: PARTICLE_SETTINGS.opacityDefault,
         };
 
         particles.push(particle);
@@ -131,18 +118,17 @@ export function EnergyParticles({
 
     particlesData.current = particles;
 
-    // Initialize buffer geometry
-    particles.forEach((particle, i) => {
-      positions[i * 3] = particle.position.x;
-      positions[i * 3 + 1] = particle.position.y;
-      positions[i * 3 + 2] = particle.position.z;
+    particles.forEach((p, i) => {
+      positions[i * 3] = p.position.x;
+      positions[i * 3 + 1] = p.position.y;
+      positions[i * 3 + 2] = p.position.z;
 
-      colors[i * 3] = particle.color.r;
-      colors[i * 3 + 1] = particle.color.g;
-      colors[i * 3 + 2] = particle.color.b;
+      colors[i * 3] = p.color.r;
+      colors[i * 3 + 1] = p.color.g;
+      colors[i * 3 + 2] = p.color.b;
 
-      sizes[i] = particle.size;
-      opacities[i] = particle.opacity;
+      sizes[i] = p.size;
+      opacities[i] = p.opacity;
     });
 
     const geo = new THREE.BufferGeometry();
@@ -151,7 +137,7 @@ export function EnergyParticles({
     geo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
     geo.setAttribute('opacity', new THREE.BufferAttribute(opacities, 1));
 
-    // 🧩 Shader for glowing particles
+    // 🧠 Same shader, kept inline for clarity
     const mat = new THREE.ShaderMaterial({
       uniforms: {
         time: { value: 0 },
@@ -195,8 +181,16 @@ export function EnergyParticles({
     return { geometry: geo, material: mat };
   }, [entries, entryPositions, symbolPositions, highlightedEntry, isMobile]);
 
+  /* ==============================
+     🔁 Animation Loop
+     ============================== */
+  let lastUpdate = 0;
   useFrame(({ clock }) => {
-    if (!particlesRef.current) return;
+    const now = clock.elapsedTime;
+    if (now - lastUpdate < 1 / 30) return; // ~30 FPS update
+    lastUpdate = now;
+
+    if (!geometry || !material) return;
 
     const positions = geometry.attributes.position.array as Float32Array;
     const colors = geometry.attributes.color.array as Float32Array;
@@ -206,7 +200,6 @@ export function EnergyParticles({
     particlesData.current.forEach((particle, i) => {
       particle.progress += particle.speed;
 
-      // Loop animation
       if (particle.progress >= 1) {
         particle.progress = 0;
         if (Math.random() > PARTICLE_SETTINGS.directionSwapChance) {
@@ -222,7 +215,7 @@ export function EnergyParticles({
         particle.progress
       );
 
-      // 🔥 Update colors and properties dynamically
+      // Highlight logic
       if (highlightedEntry) {
         const entry = entries.find((e) => e.id === highlightedEntry);
         if (entry) {
@@ -256,7 +249,7 @@ export function EnergyParticles({
           : PARTICLE_SETTINGS.sizeDefault.desktop;
       }
 
-      // Update geometry buffers
+      // Update buffers
       positions[i * 3] = particle.position.x;
       positions[i * 3 + 1] = particle.position.y;
       positions[i * 3 + 2] = particle.position.z;

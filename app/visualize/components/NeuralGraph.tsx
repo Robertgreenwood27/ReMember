@@ -78,9 +78,10 @@ export function NeuralGraph({
   /* ==============================
      🌊 Activation Wave Propagation
      ============================== */
-  useEffect(() => {
+    useEffect(() => {
     if (!GRAPH_SETTINGS.enableWaves) return;
 
+    // 🧹 Reset when nothing is selected or hovered
     if (!selectedEntry && !hoveredEntry) {
       setActivationWaves(new Map());
       return;
@@ -94,21 +95,22 @@ export function NeuralGraph({
 
     const entry = entries.find((e) => e.id === activeId);
     if (entry) {
-      // Connect symbols
+      // 🌐 Connect related symbols
       entry.nouns.forEach((noun) => {
         newWaves.set(noun, GRAPH_SETTINGS.symbolWaveStart);
       });
 
-      // Connect entries sharing tags
-      if (entry.tags) {
+      // 🏷️ Connect entries sharing tags (safe access)
+      const entryTags = entry.tags ?? [];
+      if (entryTags.length > 0) {
         entries.forEach((otherEntry) => {
-          if (otherEntry.id !== activeId && otherEntry.tags) {
-            const sharedTags = (entry.tags ?? []).filter((tag) =>
-  otherEntry.tags?.includes(tag)
-);
-            if (sharedTags.length > 0) {
-              newWaves.set(otherEntry.id, GRAPH_SETTINGS.tagWaveStart);
-            }
+          if (otherEntry.id === activeId) return;
+          const otherTags = otherEntry.tags ?? [];
+          const sharedTags = entryTags.filter((tag) =>
+            otherTags.includes(tag)
+          );
+          if (sharedTags.length > 0) {
+            newWaves.set(otherEntry.id, GRAPH_SETTINGS.tagWaveStart);
           }
         });
       }
@@ -116,26 +118,28 @@ export function NeuralGraph({
 
     setActivationWaves(newWaves);
 
-    // Animate waves over time
-    const startTime = Date.now();
+    // 🌊 Animate waves over time (single RAF chain)
+    const startTime = performance.now();
     const duration = GRAPH_SETTINGS.waveDuration;
 
     const animate = () => {
-      const elapsed = Date.now() - startTime;
-      const progress = Math.min(elapsed / duration, 1) * GRAPH_SETTINGS.wavePropagationSpeed;
+      const elapsed = performance.now() - startTime;
+      const normalized = Math.min(elapsed / duration, 1);
+      const progress = normalized * GRAPH_SETTINGS.wavePropagationSpeed;
 
-      const updatedWaves = new Map<string, number>();
+      const updated = new Map<string, number>();
       newWaves.forEach((baseValue, id) => {
-        updatedWaves.set(id, baseValue + progress);
+        updated.set(id, baseValue + progress);
       });
 
-      setActivationWaves(updatedWaves);
+      setActivationWaves(updated);
 
-      if (progress < 1) requestAnimationFrame(animate);
+      if (normalized < 1) requestAnimationFrame(animate);
     };
 
-    animate();
+    requestAnimationFrame(animate);
   }, [selectedEntry, hoveredEntry, entries]);
+
 
   /* ==============================
      🧩 Scene Composition

@@ -9,7 +9,7 @@ import * as THREE from 'three';
 import { Info, Search, X, Sparkles, Brain, Zap } from 'lucide-react';
 import { useIsMobile } from './hooks/useIsMobile';
 import { NeuralGraph } from './components/NeuralGraph';
-import { MobileMemorySheet } from './components/MobileMemorySheet';
+import { MobileDreamSheet } from './components/MobileDreamSheet';
 import { DesktopInfoPanel } from './components/DesktopInfoPanel';
 import { EffectComposer, Bloom, ChromaticAberration } from '@react-three/postprocessing';
 import { BlendFunction } from 'postprocessing';
@@ -18,10 +18,7 @@ import { BlendFunction } from 'postprocessing';
    🎛️ VISUAL PAGE SETTINGS PANEL
    ============================== */
 const VISUAL_PAGE_SETTINGS = {
-  // 📱 Mobile Preview Delay
-  mobilePreviewDelay: 800,  // Show highlight effect for 800ms before opening sheet
-
-  // 📷 Camera
+  // 🪐 Camera
   camera: {
     fovDesktop: 55,
     fovMobile: 65,
@@ -88,14 +85,12 @@ export default function NeuralVisualizationPage() {
   const [loading, setLoading] = useState(true);
   const [selectedEntry, setSelectedEntry] = useState<string | null>(null);
   const [hoveredEntry, setHoveredEntry] = useState<string | null>(null);
-  const [showSheet, setShowSheet] = useState(false); // 📱 Separate state for sheet visibility
   const [showInfo, setShowInfo] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
   const isMobile = useIsMobile();
   const cameraRef = useRef<THREE.Camera | null>(null);
   const controlsRef = useRef<any>(null);
-  const sheetTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   /* ==============================
      🧠 Load Data
@@ -112,45 +107,6 @@ export default function NeuralVisualizationPage() {
       }
     }
     fetchData();
-  }, []);
-
-  /* ==============================
-     📱 Mobile Selection with Preview Delay
-     ============================== */
-  const handleSelectEntry = (id: string | null) => {
-    // Clear any pending timer
-    if (sheetTimerRef.current) {
-      clearTimeout(sheetTimerRef.current);
-      sheetTimerRef.current = null;
-    }
-
-    if (id === null) {
-      // Deselecting
-      setSelectedEntry(null);
-      setShowSheet(false);
-    } else if (isMobile) {
-      // Mobile: Show preview effect first, then open sheet
-      setSelectedEntry(id);
-      setShowSheet(false);
-      
-      sheetTimerRef.current = setTimeout(() => {
-        setShowSheet(true);
-        sheetTimerRef.current = null;
-      }, VISUAL_PAGE_SETTINGS.mobilePreviewDelay);
-    } else {
-      // Desktop: Immediate
-      setSelectedEntry(id);
-      setShowSheet(true);
-    }
-  };
-
-  // Cleanup timer on unmount
-  useEffect(() => {
-    return () => {
-      if (sheetTimerRef.current) {
-        clearTimeout(sheetTimerRef.current);
-      }
-    };
   }, []);
 
   /* ==============================
@@ -176,23 +132,11 @@ export default function NeuralVisualizationPage() {
     [entries, hoveredEntry]
   );
 
-  const handleRandomMemory = () => {
+  const handleRandomDream = () => {
     if (filteredEntries.length === 0) return;
     const randomEntry =
       filteredEntries[Math.floor(Math.random() * filteredEntries.length)];
-    handleSelectEntry(randomEntry.id);
-  };
-
-  // 📱 Mobile: Close sheet but keep selection
-  const handleCloseSheet = () => {
-    setShowSheet(false);
-    // Don't clear selection - this lets you see the highlighted connections
-  };
-
-  // 📱 Mobile: Tap backdrop to fully deselect
-  const handleBackdropTap = () => {
-    setSelectedEntry(null);
-    setShowSheet(false);
+    setSelectedEntry(randomEntry.id);
   };
 
   /* ==============================
@@ -226,7 +170,7 @@ export default function NeuralVisualizationPage() {
       <div className="w-screen h-screen bg-gradient-to-br from-black via-gray-900 to-black flex items-center justify-center">
         <div className="text-white text-center px-6">
           <Brain size={64} className="mx-auto mb-4 text-cyan-400" />
-          <div className="text-2xl mb-2">No Neural Memories</div>
+          <div className="text-2xl mb-2">No Neural Dreams</div>
           <div className="text-gray-400">
             Start creating entries to build your dream network
           </div>
@@ -243,14 +187,6 @@ export default function NeuralVisualizationPage() {
      ============================== */
   return (
     <div className="w-screen h-screen bg-black relative touch-none overflow-hidden">
-      {/* 📱 Backdrop for closing (only show when sheet is open) */}
-      {isMobile && selectedEntry && showSheet && (
-        <div
-          className="absolute inset-0 z-5"
-          onClick={handleBackdropTap}
-        />
-      )}
-
       {/* 🧭 UI Panels (mobile + desktop) */}
       {isMobile ? (
         <MobileUI
@@ -262,9 +198,7 @@ export default function NeuralVisualizationPage() {
           setSearchQuery={setSearchQuery}
           filteredEntries={filteredEntries}
           selectedEntryData={selectedEntryData}
-          showSheet={showSheet}
-          onCloseSheet={handleCloseSheet}
-          onBackdropTap={handleBackdropTap}
+          setSelectedEntry={setSelectedEntry}
         />
       ) : (
         <DesktopUI
@@ -273,8 +207,8 @@ export default function NeuralVisualizationPage() {
           totalTags={totalTags}
           hoveredEntryData={hoveredEntryData}
           selectedEntryData={selectedEntryData}
-          setSelectedEntry={handleSelectEntry}
-          handleRandomMemory={handleRandomMemory}
+          setSelectedEntry={setSelectedEntry}
+          handleRandomDream={handleRandomDream}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
         />
@@ -355,7 +289,7 @@ export default function NeuralVisualizationPage() {
           entries={filteredEntries}
           selectedEntry={selectedEntry}
           hoveredEntry={hoveredEntry}
-          onSelectEntry={handleSelectEntry}
+          onSelectEntry={setSelectedEntry}
           onHoverEntry={setHoveredEntry}
           isMobile={isMobile}
         />
@@ -429,6 +363,7 @@ export default function NeuralVisualizationPage() {
 }
 
 /* 🧭 Subcomponents for clarity (MobileUI / DesktopUI) */
+/* You can inline them or keep them in separate files — included here for completeness. */
 
 function MobileUI({
   showSearch,
@@ -439,9 +374,7 @@ function MobileUI({
   setSearchQuery,
   filteredEntries,
   selectedEntryData,
-  showSheet,
-  onCloseSheet,
-  onBackdropTap,
+  setSelectedEntry,
 }: any) {
   return (
     <>
@@ -510,20 +443,11 @@ function MobileUI({
               <p><span className="text-yellow-300">Yellow nodes</span> are neural symbols</p>
               <p><span className="text-pink-300">Pink connections</span> link emotional tags</p>
               <p>Watch the <span className="text-white font-medium">electrical pulses</span> flow</p>
-              <p className="pt-2 border-t border-white/10 text-cyan-300">
-                💡 Tap a neuron to preview connections, tap backdrop to close
-              </p>
             </div>
           </div>
         </div>
       )}
-      {/* 📱 Show sheet only when showSheet is true */}
-      {showSheet && (
-        <MobileMemorySheet 
-          entry={selectedEntryData} 
-          onClose={onBackdropTap}  // Full deselect when tapping backdrop
-        />
-      )}
+      <MobileDreamSheet entry={selectedEntryData} onClose={() => setSelectedEntry(null)} />
     </>
   );
 }
@@ -535,7 +459,7 @@ function DesktopUI({
   hoveredEntryData,
   selectedEntryData,
   setSelectedEntry,
-  handleRandomMemory,
+  handleRandomDream,
   searchQuery,
   setSearchQuery,
 }: any) {
@@ -546,7 +470,7 @@ function DesktopUI({
         <h1 className="text-xl font-bold mb-3 flex items-center gap-2">
           <Brain className="text-cyan-400" size={24} />
           <span className="bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
-            Neural Memory Network
+            Neural Dream Network
           </span>
         </h1>
         <div className="text-sm text-gray-300 mb-4 space-y-1">
@@ -594,11 +518,11 @@ function DesktopUI({
 
         {/* Random dream */}
         <button
-          onClick={handleRandomMemory}
+          onClick={handleRandomDream}
           className="w-full bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-400/30 hover:border-cyan-400/50 text-cyan-300 px-4 py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 mb-4"
         >
           <Sparkles size={16} />
-          Random Neural Memory
+          Random Neural Dream
         </button>
 
         {/* Legend */}

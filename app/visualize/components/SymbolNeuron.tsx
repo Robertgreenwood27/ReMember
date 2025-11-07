@@ -201,19 +201,18 @@ export function SymbolNeuron({
 
       {/* Label */}
       <Billboard position={[0, labelOffset, 0]} follow>
-  <Text
-    fontSize={fontSize}
-    color={textColor}
-    anchorX="center"
-    anchorY="middle"
-    outlineWidth={SYMBOL_SETTINGS.outlineWidth}
-    outlineColor="#000000"
-    fillOpacity={isDimmed ? 0.15 : 1}
-  >
-    {word}
-  </Text>
-</Billboard>
-
+        <Text
+          fontSize={fontSize}
+          color={textColor}
+          anchorX="center"
+          anchorY="middle"
+          outlineWidth={SYMBOL_SETTINGS.outlineWidth}
+          outlineColor="#000000"
+          fillOpacity={isDimmed ? 0.15 : 1}
+        >
+          {word}
+        </Text>
+      </Billboard>
     </group>
   );
 }
