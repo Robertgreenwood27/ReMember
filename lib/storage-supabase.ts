@@ -60,7 +60,7 @@ export async function addEntry(entry: Entry): Promise<MemoryData> {
     .insert({
       user_id: user.id,
       date: entry.date,
-      anchor: entry.anchor,
+      symbol: entry.symbol,
       text: entry.text,
       nouns: entry.nouns,
       is_private: entry.is_private,
@@ -124,7 +124,7 @@ async function recalcConnections(nouns: string[]) {
   }
 }
 
-export async function getEntriesForAnchor(anchor: string): Promise<Entry[]> {
+export async function getEntriesForSymbol(symbol: string): Promise<Entry[]> {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
@@ -133,7 +133,7 @@ export async function getEntriesForAnchor(anchor: string): Promise<Entry[]> {
     .from('entries')
     .select('*')
     .eq('user_id', user.id)
-    .eq('anchor', anchor.toLowerCase())
+    .eq('symbol', symbol.toLowerCase())
     .order('date', { ascending: false });
 
   if (error) {

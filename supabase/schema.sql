@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS entries (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   date TIMESTAMPTZ DEFAULT NOW() NOT NULL,
-  anchor TEXT NOT NULL,
+  symbol TEXT NOT NULL,
   text TEXT NOT NULL,
   nouns TEXT[] NOT NULL DEFAULT '{}',
   tags TEXT[] DEFAULT '{}', -- ✅ Added tags column
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS entries (
   updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
--- Nodes table (for anchor words)
+-- Nodes table (for symbol words)
 CREATE TABLE IF NOT EXISTS nodes (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS nodes (
 
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS entries_user_id_idx ON entries(user_id);
-CREATE INDEX IF NOT EXISTS entries_anchor_idx ON entries(anchor);
+CREATE INDEX IF NOT EXISTS entries_symbol_idx ON entries(symbol);
 CREATE INDEX IF NOT EXISTS entries_date_idx ON entries(date DESC);
 CREATE INDEX IF NOT EXISTS nodes_user_id_idx ON nodes(user_id);
 CREATE INDEX IF NOT EXISTS nodes_word_idx ON nodes(word);

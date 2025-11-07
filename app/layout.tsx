@@ -4,7 +4,7 @@ import { AuthProvider } from "@/lib/auth-context";
 
 export const metadata: Metadata = {
   title: "ReMind - A Self-Growing Map of Personal Memory",
-  description: "A minimalist journaling web app that helps you rediscover your past through anchors.",
+  description: "A minimalist journaling web app that helps you rediscover your past through symbols.",
 };
 
 export default function RootLayout({

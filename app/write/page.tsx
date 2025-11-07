@@ -3,13 +3,13 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
-import { addEntry, getEntriesForAnchor } from '@/lib/storage-supabase';
+import { addEntry, getEntriesForSymbol } from '@/lib/storage-supabase';
 import { Entry } from '@/lib/types';
 
 function WritePageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const anchor = searchParams.get('anchor') || '';
+  const symbol = searchParams.get('symbol') || '';
 
   const [text, setText] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -23,13 +23,13 @@ function WritePageContent() {
 
   useEffect(() => {
     async function loadPrevious() {
-      if (anchor) {
-        const entries = await getEntriesForAnchor(anchor);
+      if (symbol) {
+        const entries = await getEntriesForSymbol(symbol);
         setPreviousEntries(entries);
       }
     }
     loadPrevious();
-  }, [anchor]);
+  }, [symbol]);
 
   const addTag = () => {
     if (tagInput.trim() && !tags.includes(tagInput.trim().toLowerCase())) {
@@ -51,8 +51,8 @@ function WritePageContent() {
     setIsSaving(true);
 
     try {
-      // Call the API route to extract anchors
-      const response = await fetch('/api/extract-anchors', {
+      // Call the API route to extract symbols
+      const response = await fetch('/api/extract-symbols', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -61,17 +61,17 @@ function WritePageContent() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to extract anchors');
+        throw new Error('Failed to extract symbols');
       }
 
       const data = await response.json();
-      const nouns = data.anchors || [];
+      const nouns = data.symbols || [];
 
       // Create new entry
       const entry: Entry = {
         id: uuidv4(),
         date: new Date().toISOString(),
-        anchor: anchor.toLowerCase(),
+        symbol: symbol.toLowerCase(),
         text,
         nouns,
         is_private: false,
@@ -102,10 +102,10 @@ function WritePageContent() {
     router.push('/');
   };
 
-  if (!anchor) {
+  if (!symbol) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-900">
-        <div className="text-neutral-500">No anchor specified</div>
+        <div className="text-neutral-500">No symbol specified</div>
       </div>
     );
   }
@@ -119,10 +119,10 @@ function WritePageContent() {
             onClick={handleCancel}
             className="text-sm text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 mb-8 transition-colors"
           >
-            ← Back to anchors
+            ← Back to symbols
           </button>
           <h1 className="text-6xl font-light text-neutral-800 dark:text-neutral-100 mb-2">
-            {anchor}
+            {symbol}
           </h1>
           {previousEntries.length > 0 && (
             <button

@@ -19,12 +19,24 @@ export async function POST(request: NextRequest) {
       messages: [
         {
           role: "system",
-          content: `You are a helpful assistant that extracts meaningful anchor words from journal entries. Pick heavily weighted words like persons places or conrete nouns that can be visual anchors in someone's mind.
+          content: `You are an intuitive dream interpreter and linguistic analyst.
+Your task is to extract the most symbolically significant nouns and phrases from a dream entry — things that could represent imagery or recurring motifs in the dreamers subconscious.
+Focus on people, animals, objects, places, natural elements, emotions embodied as imagery, and archetypal symbols (e.g. “mirror,” “door,” “ocean,” “father,” “snake,” “city,” “shadow,” “light”).
+
+Guidelines:
+
+Select concrete, visual, or emotionally charged nouns that could appear as symbols in someone’s mind.
+
+Prefer distinctive or unusual words over common or abstract ones.
+
+Avoid filler words, pronouns, verbs, and vague abstractions.
+
+Output only the list of symbols (comma-separated or JSON array), no explanations.
 Return ONLY a JSON array of lowercase words, like: ["word1", "word2", "word3"].`,
         },
         {
           role: "user",
-          content: `Extract anchor words from this text:\n\n${text}`,
+          content: `Extract symbol words from this text:\n\n${text}`,
         },
       ],
       max_completion_tokens: 200,
@@ -42,30 +54,30 @@ Return ONLY a JSON array of lowercase words, like: ["word1", "word2", "word3"].`
 
     if (!response) {
       console.warn("⚠️ No text returned from OpenAI");
-      return NextResponse.json({ anchors: [] });
+      return NextResponse.json({ symbols: [] });
     }
 
-    let anchors: string[] = [];
+    let symbols: string[] = [];
     try {
-      anchors = JSON.parse(response);
+      symbols = JSON.parse(response);
     } catch (err) {
       console.warn("⚠️ Failed to parse JSON, raw output:", response);
-      return NextResponse.json({ anchors: [] });
+      return NextResponse.json({ symbols: [] });
     }
 
     const cleaned = Array.from(
       new Set(
-        anchors
+        symbols
           .map((word: string) => word.toLowerCase().trim())
           .filter((word: string) => word.length >= 3)
       )
     );
 
-    return NextResponse.json({ anchors: cleaned });
+    return NextResponse.json({ symbols: cleaned });
   } catch (error: any) {
-    console.error("🧠 Error extracting anchors:", error.message || error);
+    console.error("🧠 Error extracting symbols:", error.message || error);
     return NextResponse.json(
-      { error: "Failed to extract anchors", details: error.message || error },
+      { error: "Failed to extract symbols", details: error.message || error },
       { status: 500 }
     );
   }

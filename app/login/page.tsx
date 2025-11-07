@@ -73,7 +73,7 @@ export default function LoginPage() {
             🧠 ReMind
           </h1>
           <p className="text-neutral-500 dark:text-neutral-400 text-sm">
-            Sign in to sync your memories
+            Sign in to sync your dreams
           </p>
         </div>
 

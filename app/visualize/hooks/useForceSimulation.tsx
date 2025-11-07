@@ -5,23 +5,23 @@ import * as THREE from 'three';
 
 export function useForceSimulation(entries: Entry[], isMobile: boolean) {
   const [entryPositions, setEntryPositions] = useState<Map<string, THREE.Vector3>>(new Map());
-  const [anchorPositions, setAnchorPositions] = useState<Map<string, THREE.Vector3>>(new Map());
+  const [symbolPositions, setSymbolPositions] = useState<Map<string, THREE.Vector3>>(new Map());
   const velocities = useRef<Map<string, THREE.Vector3>>(new Map());
 
   useEffect(() => {
     if (entries.length === 0) return;
 
     const initialEntryPositions = new Map<string, THREE.Vector3>();
-    const initialAnchorPositions = new Map<string, THREE.Vector3>();
+    const initialSymbolPositions = new Map<string, THREE.Vector3>();
     const initialVelocities = new Map<string, THREE.Vector3>();
     
-    const anchorsMap = new Map<string, string[]>();
+    const symbolsMap = new Map<string, string[]>();
     entries.forEach((entry) => {
       entry.nouns.forEach((noun) => {
-        if (!anchorsMap.has(noun)) {
-          anchorsMap.set(noun, []);
+        if (!symbolsMap.has(noun)) {
+          symbolsMap.set(noun, []);
         }
-        anchorsMap.get(noun)!.push(entry.id);
+        symbolsMap.get(noun)!.push(entry.id);
       });
     });
 
@@ -43,7 +43,7 @@ export function useForceSimulation(entries: Entry[], isMobile: boolean) {
       initialVelocities.set(entry.id, new THREE.Vector3(0, 0, 0));
     });
 
-    anchorsMap.forEach((entryIds, anchor) => {
+    symbolsMap.forEach((entryIds, symbol) => {
       let avgPos = new THREE.Vector3(0, 0, 0);
       entryIds.forEach(entryId => {
         const entryPos = initialEntryPositions.get(entryId);
@@ -57,12 +57,12 @@ export function useForceSimulation(entries: Entry[], isMobile: boolean) {
         (Math.random() - 0.5) * (isMobile ? 2 : 3)
       ));
       
-      initialAnchorPositions.set(anchor, avgPos);
-      initialVelocities.set(anchor, new THREE.Vector3(0, 0, 0));
+      initialSymbolPositions.set(symbol, avgPos);
+      initialVelocities.set(symbol, new THREE.Vector3(0, 0, 0));
     });
 
     setEntryPositions(initialEntryPositions);
-    setAnchorPositions(initialAnchorPositions);
+    setSymbolPositions(initialSymbolPositions);
     velocities.current = initialVelocities;
 
     let frame = 0;
@@ -75,7 +75,7 @@ export function useForceSimulation(entries: Entry[], isMobile: boolean) {
         return;
       }
 
-      const allKeys = [...initialEntryPositions.keys(), ...initialAnchorPositions.keys()];
+      const allKeys = [...initialEntryPositions.keys(), ...initialSymbolPositions.keys()];
       const forces = new Map<string, THREE.Vector3>();
 
       allKeys.forEach((key) => {
@@ -87,8 +87,8 @@ export function useForceSimulation(entries: Entry[], isMobile: boolean) {
         allKeys.forEach((keyB, j) => {
           if (i >= j) return;
           
-          const posA = initialEntryPositions.get(keyA) || initialAnchorPositions.get(keyA);
-          const posB = initialEntryPositions.get(keyB) || initialAnchorPositions.get(keyB);
+          const posA = initialEntryPositions.get(keyA) || initialSymbolPositions.get(keyA);
+          const posB = initialEntryPositions.get(keyB) || initialSymbolPositions.get(keyB);
           if (!posA || !posB) return;
 
           const delta = new THREE.Vector3().subVectors(posA, posB);
@@ -102,20 +102,20 @@ export function useForceSimulation(entries: Entry[], isMobile: boolean) {
       });
 
       // Attraction between connected nodes
-      anchorsMap.forEach((entryIds, anchor) => {
-        const anchorPos = initialAnchorPositions.get(anchor);
-        if (!anchorPos) return;
+      symbolsMap.forEach((entryIds, symbol) => {
+        const symbolPos = initialSymbolPositions.get(symbol);
+        if (!symbolPos) return;
 
         entryIds.forEach((entryId) => {
           const entryPos = initialEntryPositions.get(entryId);
           if (!entryPos) return;
 
-          const delta = new THREE.Vector3().subVectors(entryPos, anchorPos);
+          const delta = new THREE.Vector3().subVectors(entryPos, symbolPos);
           const distance = delta.length();
           const attraction = distance * 0.025;
           
           delta.normalize().multiplyScalar(attraction);
-          forces.get(anchor)!.add(delta);
+          forces.get(symbol)!.add(delta);
           forces.get(entryId)!.sub(delta.multiplyScalar(0.12));
         });
       });
@@ -156,7 +156,7 @@ export function useForceSimulation(entries: Entry[], isMobile: boolean) {
 
       const damping = 0.87;
       const newEntryPositions = new Map<string, THREE.Vector3>();
-      const newAnchorPositions = new Map<string, THREE.Vector3>();
+      const newSymbolPositions = new Map<string, THREE.Vector3>();
 
       initialEntryPositions.forEach((pos, id) => {
         const vel = velocities.current.get(id)!;
@@ -171,7 +171,7 @@ export function useForceSimulation(entries: Entry[], isMobile: boolean) {
         initialEntryPositions.set(id, newPos);
       });
 
-      initialAnchorPositions.forEach((pos, word) => {
+      initialSymbolPositions.forEach((pos, word) => {
         const vel = velocities.current.get(word)!;
         const force = forces.get(word)!;
 
@@ -179,17 +179,17 @@ export function useForceSimulation(entries: Entry[], isMobile: boolean) {
         vel.multiplyScalar(damping);
         const newPos = pos.clone().add(vel);
 
-        newAnchorPositions.set(word, newPos);
+        newSymbolPositions.set(word, newPos);
         velocities.current.set(word, vel);
-        initialAnchorPositions.set(word, newPos);
+        initialSymbolPositions.set(word, newPos);
       });
 
       setEntryPositions(new Map(newEntryPositions));
-      setAnchorPositions(new Map(newAnchorPositions));
+      setSymbolPositions(new Map(newSymbolPositions));
     }, 16);
 
     return () => clearInterval(interval);
   }, [entries, isMobile]);
 
-  return { entryPositions, anchorPositions };
+  return { entryPositions, symbolPositions };
 }

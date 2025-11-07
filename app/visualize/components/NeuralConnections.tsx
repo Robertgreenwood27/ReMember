@@ -58,13 +58,13 @@ const CONNECTION_SETTINGS = {
 export function NeuralConnections({ 
   entries, 
   entryPositions,
-  anchorPositions,
+  symbolPositions,
   highlightedEntry,
   isMobile
 }: { 
   entries: Entry[];
   entryPositions: Map<string, THREE.Vector3>;
-  anchorPositions: Map<string, THREE.Vector3>;
+  symbolPositions: Map<string, THREE.Vector3>;
   highlightedEntry: string | null;
   isMobile: boolean;
 }) {
@@ -94,8 +94,8 @@ export function NeuralConnections({
       if (!entryPos) return;
 
       entry.nouns.forEach((noun) => {
-        const anchorPos = anchorPositions.get(noun);
-        if (!anchorPos) return;
+        const symbolPos = symbolPositions.get(noun);
+        if (!symbolPos) return;
 
         const isRelated = highlightedEntry === entry.id;
         const opacity = highlightedEntry
@@ -109,11 +109,11 @@ export function NeuralConnections({
         // Cull invisible lines early
         if (opacity < CONNECTION_SETTINGS.cullOpacityThreshold) return;
 
-        const length = entryPos.distanceTo(anchorPos);
+        const length = entryPos.distanceTo(symbolPos);
 
         nounResult.push({
           start: entryPos,
-          end: anchorPos,
+          end: symbolPos,
           opacity,
           highlighted: isRelated,
           entryId: entry.id,
@@ -175,7 +175,7 @@ export function NeuralConnections({
     });
 
     return { nounLines: nounResult, tagLines: tagResult };
-  }, [entries, entryPositions, anchorPositions, highlightedEntry, isMobile]);
+  }, [entries, entryPositions, symbolPositions, highlightedEntry, isMobile]);
 
   // Separate highlighted from non-highlighted
   const highlightedNounLines = useMemo(
@@ -526,8 +526,8 @@ function TagLabel({
           ? CONNECTION_SETTINGS.tagTextHighlightColor
           : CONNECTION_SETTINGS.tagTextColor
       }
-      anchorX="center"
-      anchorY="middle"
+      symbolX="center"
+      symbolY="middle"
       outlineWidth={CONNECTION_SETTINGS.labelOutline}
       outlineColor="#000000"
       fillOpacity={textOpacity}

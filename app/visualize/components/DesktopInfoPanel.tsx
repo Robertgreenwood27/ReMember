@@ -18,7 +18,7 @@ export function DesktopInfoPanel({
           <div className="flex items-center gap-2 mb-2">
             <Brain size={20} className="text-cyan-400" />
             <h2 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
-              {entry.anchor}
+              {entry.symbol}
             </h2>
           </div>
           <div className="flex items-center gap-2 text-xs text-gray-400">
@@ -66,7 +66,7 @@ export function DesktopInfoPanel({
       <div className="border-t border-white/10 pt-4">
         <div className="flex items-center gap-2 mb-3 text-xs text-gray-400">
           <Brain size={14} className="text-yellow-400" />
-          <span>Neural Anchors</span>
+          <span>Neural Symbols</span>
         </div>
         <div className="flex flex-wrap gap-2">
           {entry.nouns.map((noun, i) => (

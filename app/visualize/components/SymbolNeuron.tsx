@@ -10,7 +10,7 @@ import { neuronVertexShader, neuronFragmentShader } from '../shaders/neuronShade
 /* ==============================
    🎛️ VISUAL CONTROL PANEL
    ============================== */
-const ANCHOR_SETTINGS = {
+const SYMBOL_SETTINGS = {
   // ⚙️ Core Appearance
   color: '#b39c6b',         // dull gold
   baseOpacity: 0.75,
@@ -50,9 +50,9 @@ const ANCHOR_SETTINGS = {
 
 
 /* ==============================
-   🧠 AnchorNeuron Component
+   🧠 SymbolNeuron Component
    ============================== */
-export function AnchorNeuron({ 
+export function SymbolNeuron({ 
   word, 
   position, 
   isHighlighted,
@@ -73,15 +73,15 @@ export function AnchorNeuron({
   const glowRef = useRef<THREE.Mesh>(null);
   const router = useRouter();
 
-  const anchorColor = useMemo(() => new THREE.Color(ANCHOR_SETTINGS.color), []);
+  const symbolColor = useMemo(() => new THREE.Color(SYMBOL_SETTINGS.color), []);
 
   const shaderMaterial = useMemo(() => {
     return new THREE.ShaderMaterial({
       uniforms: {
-        color: { value: anchorColor },
+        color: { value: symbolColor },
         time: { value: 0 },
-        opacity: { value: ANCHOR_SETTINGS.baseOpacity },
-        pulseIntensity: { value: ANCHOR_SETTINGS.defaultPulseIntensity },
+        opacity: { value: SYMBOL_SETTINGS.baseOpacity },
+        pulseIntensity: { value: SYMBOL_SETTINGS.defaultPulseIntensity },
         isHighlighted: { value: 0.0 }
       },
       vertexShader: neuronVertexShader,
@@ -89,7 +89,7 @@ export function AnchorNeuron({
       transparent: true,
       side: THREE.DoubleSide
     });
-  }, [anchorColor]);
+  }, [symbolColor]);
 
   useFrame(({ clock }) => {
     if (meshRef.current && shaderMaterial) {
@@ -99,58 +99,58 @@ export function AnchorNeuron({
       // Update shader uniforms
       shaderMaterial.uniforms.pulseIntensity.value =
         isHighlighted
-          ? ANCHOR_SETTINGS.highlightPulseIntensity + waveEffect * 0.5
-          : ANCHOR_SETTINGS.defaultPulseIntensity;
+          ? SYMBOL_SETTINGS.highlightPulseIntensity + waveEffect * 0.5
+          : SYMBOL_SETTINGS.defaultPulseIntensity;
       shaderMaterial.uniforms.isHighlighted.value = isHighlighted ? 1.0 : 0.0;
       shaderMaterial.uniforms.opacity.value = isDimmed
-        ? ANCHOR_SETTINGS.dimmedOpacity
-        : ANCHOR_SETTINGS.baseOpacity;
+        ? SYMBOL_SETTINGS.dimmedOpacity
+        : SYMBOL_SETTINGS.baseOpacity;
 
       // Scale behavior
       const baseScale = Math.min(
-        ANCHOR_SETTINGS.baseScale + count * ANCHOR_SETTINGS.scalePerConnection,
-        ANCHOR_SETTINGS.maxScale
+        SYMBOL_SETTINGS.baseScale + count * SYMBOL_SETTINGS.scalePerConnection,
+        SYMBOL_SETTINGS.maxScale
       );
       const targetScale = isHighlighted
-        ? baseScale * ANCHOR_SETTINGS.highlightScaleBoost
+        ? baseScale * SYMBOL_SETTINGS.highlightScaleBoost
         : baseScale;
 
       meshRef.current.scale.lerp(
         new THREE.Vector3(targetScale, targetScale, targetScale),
-        ANCHOR_SETTINGS.scaleLerpSpeed
+        SYMBOL_SETTINGS.scaleLerpSpeed
       );
 
       // Gentle rotation + bobbing
-      meshRef.current.rotation.y += ANCHOR_SETTINGS.rotationSpeed;
+      meshRef.current.rotation.y += SYMBOL_SETTINGS.rotationSpeed;
       if (isHighlighted) {
         meshRef.current.position.y =
-          Math.sin(clock.getElapsedTime() * ANCHOR_SETTINGS.bobSpeed) *
-          ANCHOR_SETTINGS.bobAmplitude;
+          Math.sin(clock.getElapsedTime() * SYMBOL_SETTINGS.bobSpeed) *
+          SYMBOL_SETTINGS.bobAmplitude;
       }
     }
 
     if (glowRef.current) {
       const glowScale = isHighlighted
-        ? ANCHOR_SETTINGS.glowHighlightScale
-        : ANCHOR_SETTINGS.glowBaseScale;
+        ? SYMBOL_SETTINGS.glowHighlightScale
+        : SYMBOL_SETTINGS.glowBaseScale;
 
       glowRef.current.scale.lerp(
         new THREE.Vector3(glowScale, glowScale, glowScale),
-        ANCHOR_SETTINGS.glowLerpSpeed
+        SYMBOL_SETTINGS.glowLerpSpeed
       );
 
       const material = glowRef.current.material as THREE.MeshBasicMaterial;
       material.opacity = isHighlighted
-        ? ANCHOR_SETTINGS.glowHighlightOpacity
+        ? SYMBOL_SETTINGS.glowHighlightOpacity
         : isDimmed
-        ? ANCHOR_SETTINGS.glowDimmedOpacity
-        : ANCHOR_SETTINGS.glowBaseOpacity;
+        ? SYMBOL_SETTINGS.glowDimmedOpacity
+        : SYMBOL_SETTINGS.glowBaseOpacity;
     }
   });
 
   const handleClick = (e: any) => {
     e.stopPropagation();
-    router.push(`/write?anchor=${encodeURIComponent(word)}`);
+    router.push(`/write?symbol=${encodeURIComponent(word)}`);
   };
 
   const size = Math.min(
@@ -158,29 +158,29 @@ export function AnchorNeuron({
     isMobile ? 0.25 : 0.3
   );
   const fontSize = isMobile
-    ? ANCHOR_SETTINGS.fontSize.mobile
-    : ANCHOR_SETTINGS.fontSize.desktop;
+    ? SYMBOL_SETTINGS.fontSize.mobile
+    : SYMBOL_SETTINGS.fontSize.desktop;
   const labelOffset = isMobile
-    ? ANCHOR_SETTINGS.labelOffset.mobile
-    : ANCHOR_SETTINGS.labelOffset.desktop;
+    ? SYMBOL_SETTINGS.labelOffset.mobile
+    : SYMBOL_SETTINGS.labelOffset.desktop;
   const textColor = isHighlighted
-    ? ANCHOR_SETTINGS.textHighlightColor
-    : ANCHOR_SETTINGS.textColor;
+    ? SYMBOL_SETTINGS.textHighlightColor
+    : SYMBOL_SETTINGS.textColor;
 
   return (
     <group position={position}>
       {/* Outer Glow */}
-      <mesh ref={glowRef} scale={ANCHOR_SETTINGS.glowBaseScale}>
+      <mesh ref={glowRef} scale={SYMBOL_SETTINGS.glowBaseScale}>
         <sphereGeometry args={[size, 12, 12]} />
         <meshBasicMaterial
-          color={anchorColor}
+          color={symbolColor}
           transparent
-          opacity={ANCHOR_SETTINGS.glowBaseOpacity}
+          opacity={SYMBOL_SETTINGS.glowBaseOpacity}
           side={THREE.BackSide}
         />
       </mesh>
 
-      {/* Main Anchor Neuron */}
+      {/* Main Symbol Neuron */}
       <mesh
         ref={meshRef}
         material={shaderMaterial}
@@ -201,18 +201,19 @@ export function AnchorNeuron({
 
       {/* Label */}
       <Billboard position={[0, labelOffset, 0]} follow>
-        <Text
-          fontSize={fontSize}
-          color={textColor}
-          anchorX="center"
-          anchorY="middle"
-          outlineWidth={ANCHOR_SETTINGS.outlineWidth}
-          outlineColor="#000000"
-          fillOpacity={isDimmed ? 0.15 : 1}
-        >
-          {word}
-        </Text>
-      </Billboard>
+  <Text
+    fontSize={fontSize}
+    color={textColor}
+    anchorX="center"
+    anchorY="middle"
+    outlineWidth={SYMBOL_SETTINGS.outlineWidth}
+    outlineColor="#000000"
+    fillOpacity={isDimmed ? 0.15 : 1}
+  >
+    {word}
+  </Text>
+</Billboard>
+
     </group>
   );
 }

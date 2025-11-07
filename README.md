@@ -4,23 +4,23 @@ A Self-Growing Map of Personal Memory
 
 ## Overview
 
-Memory Jogger is a minimalist journaling web app that helps you rediscover your past through **anchors** — key nouns automatically extracted from your own writing. Each time you write, the system parses the text, surfaces new anchor words, and links them to existing ones. Over time, the result becomes an explorable graph of memories showing how moments, people, places, and emotions interconnect.
+Memory Jogger is a minimalist journaling web app that helps you rediscover your past through **symbols** — key nouns automatically extracted from your own writing. Each time you write, the system parses the text, surfaces new symbol words, and links them to existing ones. Over time, the result becomes an explorable graph of dreams showing how moments, people, places, and emotions interconnect.
 
 ## ✨ New: Cloud Sync & Authentication
 
 Memory Jogger now supports **optional** Supabase integration for:
-- ☁️ **Cloud storage** - Unlimited memories, no localStorage limits
+- ☁️ **Cloud storage** - Unlimited dreams, no localStorage limits
 - 🔐 **User authentication** - Secure accounts with email/password or magic links
-- 🔄 **Multi-device sync** - Access your memories anywhere
+- 🔄 **Multi-device sync** - Access your dreams anywhere
 - 💾 **Automatic backups** - Never lose your data
 
 **Works both ways**: Use it without an account (localStorage only) or sign up for cloud sync!
 
 ## Features
 
-✨ **Anchor-Based Writing** - Start with a word, write freely, discover new connections  
+✨ **Symbol-Based Writing** - Start with a word, write freely, discover new connections  
 🔍 **Automatic Noun Extraction** - Uses compromise.js for intelligent text parsing  
-📊 **Visual Word Cloud** - See your anchors sized by frequency  
+📊 **Visual Word Cloud** - See your symbols sized by frequency  
 💾 **Local-First Storage** - Your data stays in your browser via localStorage  
 ☁️ **Optional Cloud Sync** - Supabase integration for unlimited storage and multi-device access  
 🔐 **User Authentication** - Secure sign-up/sign-in with email verification  
@@ -69,29 +69,29 @@ If you want unlimited storage and multi-device sync:
 
 ## How to Use
 
-### 1. Create Your First Anchor
-- On the home page, click "Create First Anchor"
-- Enter a word that represents a memory (e.g., "dad", "beach", "childhood")
+### 1. Create Your First Symbol
+- On the home page, click "Create First Symbol"
+- Enter a word that represents a dream (e.g., "dad", "beach", "childhood")
 
 ### 2. Write Freely
-- You'll see your anchor word at the top of a blank page
-- Write whatever comes to mind about that anchor
+- You'll see your symbol word at the top of a blank page
+- Write whatever comes to mind about that symbol
 - Don't worry about structure — just write
 
 ### 3. Save and Discover
 - Click "Save" when you're done
 - The system extracts nouns from your writing
-- These nouns become new anchors you can explore
+- These nouns become new symbols you can explore
 
 ### 4. Navigate Your Memory Map
-- Return to the home page to see all your anchors
-- Larger words = more frequent in your memories
-- Click any anchor to write more or see previous entries
+- Return to the home page to see all your symbols
+- Larger words = more frequent in your dreams
+- Click any symbol to write more or see previous entries
 
 ### 5. Sync Your Data (Optional)
 - Sign in with your account
 - Go to Settings to sync localStorage to cloud
-- Access your memories from any device
+- Access your dreams from any device
 
 ## Technology Stack
 
@@ -126,9 +126,9 @@ The app can work in **hybrid mode**: writes to localStorage immediately (fast), 
 ## Project Structure
 
 ```
-memory-jogger/
+dream-jogger/
 ├── app/
-│   ├── page.tsx              # Home page (Anchor Cloud)
+│   ├── page.tsx              # Home page (Symbol Cloud)
 │   ├── write/page.tsx        # Write page
 │   ├── login/page.tsx        # Login page
 │   ├── signup/page.tsx       # Signup page
@@ -169,7 +169,7 @@ npm run type-check
 
 1. Go to Settings page
 2. Click "Export as JSON"
-3. Downloads a complete backup of your memories
+3. Downloads a complete backup of your dreams
 
 ### Sync Local to Cloud
 
@@ -182,7 +182,7 @@ npm run type-check
 Open browser DevTools console:
 ```javascript
 // Clear localStorage
-localStorage.removeItem('memory-jogger-data');
+localStorage.removeItem('dream-jogger-data');
 ```
 
 Or use the Settings page "Clear Local Data" button.
@@ -191,13 +191,13 @@ Or use the Settings page "Clear Local Data" button.
 
 - 🔄 Real-time sync across devices
 - 📈 **Graph Visualization** - Interactive network view with React Flow
-- 🔍 **Search** - Full-text search across all memories
+- 🔍 **Search** - Full-text search across all dreams
 - 🔒 **Privacy Controls** - Mark entries as private
-- 🏷️ **Life Phases** - Tag memories by era (Becoming, Growing, etc.)
+- 🏷️ **Life Phases** - Tag dreams by era (Becoming, Growing, etc.)
 - 🔗 **Smart Linking** - Automatic suggestions for related entries
 - 📱 **Mobile App** - Native iOS/Android versions
 - 🎨 **Themes** - Customizable color schemes
-- 📊 **Analytics** - Insights about your memory patterns
+- 📊 **Analytics** - Insights about your dream patterns
 
 ## Philosophy
 
@@ -205,8 +205,8 @@ Memory Jogger believes in:
 - **Ownership** - Your data, your device, your control (or your cloud, your choice)
 - **Discovery** - Structure reveals insight without AI interpretation  
 - **Simplicity** - One word, one blank page, infinite connections
-- **Growth** - Your memory map expands with every entry
-- **Privacy** - Optional sync means you choose where your memories live
+- **Growth** - Your dream map expands with every entry
+- **Privacy** - Optional sync means you choose where your dreams live
 
 ## Security & Privacy
 
@@ -225,7 +225,7 @@ This is a prototype project. Feel free to adapt and extend!
 ## Credits
 
 Built with Next.js, Tailwind CSS, compromise.js, and Supabase  
-Concept: A self-growing map of personal memory
+Concept: A self-growing map of personal dream
 
 ---
 

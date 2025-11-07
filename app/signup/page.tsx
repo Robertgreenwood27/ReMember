@@ -77,7 +77,7 @@ export default function SignUpPage() {
             🧠 ReMind
           </h1>
           <p className="text-neutral-500 dark:text-neutral-400 text-sm">
-            Create an account to sync your memories
+            Create an account to sync your dreams
           </p>
         </div>
 

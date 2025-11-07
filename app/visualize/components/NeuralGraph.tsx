@@ -4,7 +4,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { Entry } from '@/lib/types';
 import { useForceSimulation } from '../hooks/useForceSimulation';
 import { NeuronNode } from './NeuronNode';
-import { AnchorNeuron } from './AnchorNeuron';
+import { SymbolNeuron } from './SymbolNeuron';
 import { NeuralConnections } from './NeuralConnections';
 import { EnergyParticles } from './EnergyParticles';
 
@@ -15,7 +15,7 @@ const GRAPH_SETTINGS = {
   // 🕸️ Force Simulation Behavior
   forceStrength: {
     entryRepel: -25,
-    anchorRepel: -12,
+    symbolRepel: -12,
     linkStrength: 0.2,
   },
 
@@ -23,7 +23,7 @@ const GRAPH_SETTINGS = {
   waveDuration: 1400,
   wavePropagationSpeed: 0.8,
   entryWaveStart: 0.0,
-  anchorWaveStart: 0.25,
+  symbolWaveStart: 0.25,
   tagWaveStart: 0.45,
 
   // ⚡ Interaction Feel
@@ -34,7 +34,7 @@ const GRAPH_SETTINGS = {
   // 🧠 Entry Visualization
   showConnections: true,
   showParticles: true,
-  showAnchors: true,
+  showSymbols: true,
 
   // 🔄 Animation Toggles
   enableWaves: true,
@@ -61,10 +61,10 @@ export function NeuralGraph({
   onHoverEntry: (id: string | null) => void;
   isMobile: boolean;
 }) {
-  const { entryPositions, anchorPositions } = useForceSimulation(entries, isMobile);
+  const { entryPositions, symbolPositions } = useForceSimulation(entries, isMobile);
   const [activationWaves, setActivationWaves] = useState<Map<string, number>>(new Map());
 
-  const anchorToEntries = useMemo(() => {
+  const symbolToEntries = useMemo(() => {
     const map = new Map<string, string[]>();
     entries.forEach((entry) => {
       entry.nouns.forEach((noun) => {
@@ -94,9 +94,9 @@ export function NeuralGraph({
 
     const entry = entries.find((e) => e.id === activeId);
     if (entry) {
-      // Connect anchors
+      // Connect symbols
       entry.nouns.forEach((noun) => {
-        newWaves.set(noun, GRAPH_SETTINGS.anchorWaveStart);
+        newWaves.set(noun, GRAPH_SETTINGS.symbolWaveStart);
       });
 
       // Connect entries sharing tags
@@ -146,7 +146,7 @@ export function NeuralGraph({
         <NeuralConnections 
           entries={entries}
           entryPositions={entryPositions}
-          anchorPositions={anchorPositions}
+          symbolPositions={symbolPositions}
           highlightedEntry={selectedEntry || hoveredEntry}
           isMobile={isMobile}
         />
@@ -156,7 +156,7 @@ export function NeuralGraph({
         <EnergyParticles
           entries={entries}
           entryPositions={entryPositions}
-          anchorPositions={anchorPositions}
+          symbolPositions={symbolPositions}
           highlightedEntry={selectedEntry || hoveredEntry}
           isMobile={isMobile}
         />
@@ -196,10 +196,10 @@ export function NeuralGraph({
         );
       })}
 
-      {/* 🌐 Anchor Nodes */}
-      {GRAPH_SETTINGS.showAnchors &&
-        Array.from(anchorPositions.entries()).map(([word, position]) => {
-          const parentEntries = anchorToEntries.get(word) || [];
+      {/* 🌐 Symbol Nodes */}
+      {GRAPH_SETTINGS.showSymbols &&
+        Array.from(symbolPositions.entries()).map(([word, position]) => {
+          const parentEntries = symbolToEntries.get(word) || [];
           const highlightId = selectedEntry || hoveredEntry;
           const isHighlighted = highlightId
             ? parentEntries.includes(highlightId)
@@ -208,7 +208,7 @@ export function NeuralGraph({
           const activationWave = activationWaves.get(word) || 0;
 
           return (
-            <AnchorNeuron
+            <SymbolNeuron
               key={word}
               word={word}
               position={position}

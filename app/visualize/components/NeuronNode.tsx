@@ -229,13 +229,13 @@ const tagColors: { [key: string]: string } = {
         <Text
           fontSize={fontSize}
           color={textColor}
-          anchorX="center"
-          anchorY="middle"
+          symbolX="center"
+          symbolY="middle"
           outlineWidth={NEURON_SETTINGS.outlineWidth}
           outlineColor="#000000"
           fillOpacity={isDimmed ? 0.2 : 1}
         >
-          {entry.anchor}
+          {entry.symbol}
         </Text>
       </Billboard>
     </group>

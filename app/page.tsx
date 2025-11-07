@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -7,42 +6,23 @@ import { loadData } from '@/lib/storage-supabase';
 import { Node } from '@/lib/types';
 import { useAuth } from '@/lib/auth-context';
 import Link from 'next/link';
-import { Menu } from 'lucide-react'; // npm i lucide-react
+import { Menu } from 'lucide-react';
 
-/* Weighted random helper */
-function weightedRandom(nodes: Node[], count = 40): Node[] {
-  const weighted: Node[] = [];
-  nodes.forEach((node) => {
-    const weight = Math.max(1, node.count);
-    for (let i = 0; i < weight; i++) weighted.push(node);
-  });
-
-  const result: Node[] = [];
-  const used = new Set<string>();
-  const maxPossible = nodes.length; // Can't have more unique items than input nodes
-  
-  while (result.length < Math.min(count, maxPossible) && weighted.length > 0) {
-    const pick = weighted[Math.floor(Math.random() * weighted.length)];
-    if (!used.has(pick.word)) {
-      result.push(pick);
-      used.add(pick.word);
-    }
-  }
-  return result;
-}
-
-export default function Home() {
+/* ============================
+   Dream Home Component
+============================ */
+export default function DreamHome() {
   const [nodes, setNodes] = useState<Node[]>([]);
-  const [anchorsWithMemories, setAnchorsWithMemories] = useState<string[]>([]);
+  const [symbolsWithDreams, setSymbolsWithDreams] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [entriesCount, setEntriesCount] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [infoOpen, setInfoOpen] = useState(false); // start safe (no SSR access)
+  const [infoOpen, setInfoOpen] = useState(false);
 
   const router = useRouter();
-  const { user, signOut, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
-  /*  Load dropdown state only on client */
+  /* ---------- localStorage for info panel ---------- */
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('infoOpen');
@@ -50,189 +30,166 @@ export default function Home() {
     }
   }, []);
 
-  /*  Save dropdown state changes */
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('infoOpen', String(infoOpen));
     }
   }, [infoOpen]);
 
-  /*  Fetch Supabase data and randomize anchors */
+  /* ---------- Load data ---------- */
   useEffect(() => {
     async function fetchData() {
       if (!user) return;
       const data = await loadData();
-      const randomized = weightedRandom(data.nodes, 40);
-      setNodes(randomized);
-      setEntriesCount(data.entries.length);
 
-      const anchors = Array.from(
-        new Set(data.entries.map((e) => e.anchor.toLowerCase()))
-      );
-      setAnchorsWithMemories(anchors);
+      const uniqueNodes = Array.from(
+        new Map(data.nodes.map((n) => [n.word.toLowerCase(), n])).values()
+      ).sort((a, b) => b.count - a.count);
+
+      setNodes(uniqueNodes);
+      setEntriesCount(data.entries.length);
+      const symbols = Array.from(new Set(data.entries.map((e) => e.symbol.toLowerCase())));
+      setSymbolsWithDreams(symbols);
       setIsLoading(false);
     }
 
-    if (!authLoading && user) {
-      fetchData();
-    } else if (!authLoading && !user) {
-      router.push('/login');
-    }
+    if (!authLoading && user) fetchData();
+    else if (!authLoading && !user) router.push('/login');
   }, [authLoading, user, router]);
 
-  const handleAnchorClick = (word: string) => {
-    router.push(`/write?anchor=${encodeURIComponent(word)}`);
-  };
-
   const handleNewAnchor = () => {
-    const word = prompt('Enter a new anchor word:');
-    if (word && word.trim()) {
-      router.push(`/write?anchor=${encodeURIComponent(word.trim())}`);
-    }
-  };
-
-  const handleRefreshAnchors = () => {
-    setNodes((prev) => weightedRandom(prev, 40));
+    const word = prompt('Enter a new dream symbol:');
+    if (word?.trim()) router.push(`/write?symbol=${encodeURIComponent(word.trim())}`);
   };
 
   const getFontSize = (count: number, maxCount: number) => {
-    if (maxCount === 1) return 'text-base sm:text-lg';
     const ratio = count / maxCount;
-    if (ratio > 0.7) return 'text-3xl sm:text-4xl';
-    if (ratio > 0.5) return 'text-2xl sm:text-3xl';
+    if (ratio > 0.7) return 'text-3xl sm:text-5xl';
+    if (ratio > 0.5) return 'text-2xl sm:text-4xl';
     if (ratio > 0.3) return 'text-xl sm:text-2xl';
-    if (ratio > 0.15) return 'text-lg sm:text-xl';
     return 'text-base sm:text-lg';
   };
-
   const maxCount = Math.max(...nodes.map((n) => n.count), 1);
 
+  /* ---------- Loading screen ---------- */
   if (isLoading || authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-900">
-        <div className="text-neutral-500">Loading...</div>
+      <div className="fixed inset-0 flex items-center justify-center text-zinc-500">
+        Loading your dreamscape...
       </div>
     );
   }
 
-
+  /* ---------- MAIN RETURN ---------- */
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex flex-col md:flex-row">
-      {/* Sidebar (Desktop only) */}
-      <aside className="hidden md:block w-64 bg-white dark:bg-neutral-800 border-r border-neutral-200 dark:border-neutral-700 p-6 overflow-y-auto">
-        <h2 className="text-lg font-medium text-neutral-700 dark:text-neutral-200 mb-4">
-          Anchors with Memories
-        </h2>
-        {anchorsWithMemories.length === 0 ? (
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">
-            No memories yet.
-          </p>
-        ) : (
-          <ul className="space-y-2">
-            {anchorsWithMemories.map((anchor) => (
-              <li key={anchor}>
-                <Link
-                  href={`/memories?anchor=${encodeURIComponent(anchor)}`}
-                  className="block text-sm text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition-colors"
-                >
-                  {anchor}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </aside>
+    <>
+      {/* ==== STARFIELD (fixed, behind everything) ==== */}
+      <div className="fixed inset-0 -z-10 overflow-hidden">
+        {/* Main layer */}
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: "url('/stars.png')",
+            backgroundRepeat: 'repeat',
+            backgroundSize: 'auto',
+            backgroundPosition: '0 0',
+            animation: 'floatStars 600s linear infinite',
+          }}
+        />
+        {/* Slower secondary layer */}
+        <div
+          className="absolute inset-0 opacity-40"
+          style={{
+            backgroundImage: "url('/stars.png')",
+            backgroundRepeat: 'repeat',
+            backgroundSize: 'auto',
+            backgroundPosition: '0 0',
+            animation: 'floatStars2 900s linear infinite',
+          }}
+        />
+      </div>
 
-      {/* Main Content */}
-      <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto relative">
-        {/* Mobile dropdown trigger */}
-        <div className="md:hidden mb-6">
-          <button
-            onClick={() => setMenuOpen((prev) => !prev)}
-            className="flex items-center gap-2 px-4 py-2 bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-md hover:bg-neutral-300 dark:hover:bg-neutral-700 transition"
-          >
-            <Menu size={18} />
-            Anchors
-          </button>
+      {/* ==== PAGE CONTENT ==== */}
+      <div className="relative min-h-screen flex flex-col md:flex-row overflow-hidden text-zinc-300 font-light">
 
-          {menuOpen && (
-            <div className="mt-2 bg-white dark:bg-neutral-800 rounded-lg shadow-lg border border-neutral-200 dark:border-neutral-700 p-4">
-              <h2 className="text-sm font-medium text-neutral-600 dark:text-neutral-300 mb-2">
-              ­ Anchors with Memories
-              </h2>
-              {anchorsWithMemories.length === 0 ? (
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                  No memories yet.
-                </p>
-              ) : (
-                <ul className="space-y-2">
-                  {anchorsWithMemories.map((anchor) => (
-                    <li key={anchor}>
-                      <Link
-                        href={`/memories?anchor=${encodeURIComponent(anchor)}`}
-                        className="block text-sm text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition-colors"
-                        onClick={() => setMenuOpen(false)}
-                      >
-                        {anchor}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/*  Header */}
-        <header className="mb-8 sm:mb-12">
-          <div className="flex flex-col sm:flex-row justify-between items-center sm:items-start gap-4 mb-6">
-            <div className="text-center sm:text-left flex-1">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-light text-neutral-800 dark:text-neutral-100 mb-3">
-                ReMind
-              </h1>
-              <p className="text-sm sm:text-base text-neutral-500 dark:text-neutral-400">
-                A self-growing map of personal memory
-              </p>
-            </div>
-
-            <div className="flex flex-wrap justify-center sm:justify-end gap-2 items-center">
-              {user && (
-                <>
-                  <div className="text-xs text-neutral-500 dark:text-neutral-400 w-full sm:w-auto text-center sm:text-right">
-                    {user.email}
-                  </div>
+        {/* ---- Sidebar (desktop) ---- */}
+        <aside className="hidden md:block w-64 border-r border-zinc-800 bg-zinc-900/30 backdrop-blur p-6">
+          <h2 className="text-lg font-medium text-zinc-400 mb-4">Symbols with Dreams</h2>
+          {symbolsWithDreams.length === 0 ? (
+            <p className="text-sm text-zinc-600">No dreams yet.</p>
+          ) : (
+            <ul className="space-y-2">
+              {symbolsWithDreams.map((s) => (
+                <li key={s}>
                   <Link
-                    href="/settings"
-                    className="px-4 py-2 text-xs bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-full hover:bg-neutral-300 dark:hover:bg-neutral-700 transition-colors"
+                    href={`/memories?symbol=${encodeURIComponent(s)}`}
+                    className="text-sm text-zinc-400 hover:text-white transition-colors"
                   >
-                    Settings
+                    {s}
                   </Link>
-                  <button
-                    onClick={() => signOut()}
-                    className="px-4 py-2 text-xs bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-full hover:bg-neutral-300 dark:hover:bg-neutral-700 transition-colors"
-                  >
-                    Sign Out
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        </header>
+                </li>
+              ))}
+            </ul>
+          )}
+        </aside>
 
-        {/* Info Dropdown */}
-        <div className="mb-8">
+        {/* ---- Main area ---- */}
+        <main className="flex-1 relative p-6 sm:p-10">
+
+          {/* Mobile menu */}
+          <div className="md:hidden mb-6">
+            <button
+              onClick={() => setMenuOpen((p) => !p)}
+              className="flex items-center gap-2 px-4 py-2 bg-zinc-900 text-zinc-300 rounded-md border border-zinc-700 hover:bg-zinc-800 transition"
+            >
+              <Menu size={18} />
+              Symbols
+            </button>
+
+            {menuOpen && (
+              <div className="mt-2 bg-zinc-900/80 rounded-lg border border-zinc-800 p-4">
+                <h2 className="text-sm font-medium text-zinc-400 mb-2">Symbols with Dreams</h2>
+                {symbolsWithDreams.length === 0 ? (
+                  <p className="text-sm text-zinc-500">No dreams yet.</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {symbolsWithDreams.map((s) => (
+                      <li key={s}>
+                        <Link
+                          href={`/memories?symbol=${encodeURIComponent(s)}`}
+                          className="block text-sm text-zinc-400 hover:text-white transition"
+                          onClick={() => setMenuOpen(false)}
+                        >
+                          {s}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Header */}
+          <header className="mb-10 text-center sm:text-left">
+            <h1 className="text-4xl sm:text-6xl font-extralight text-white mb-3 tracking-wide">
+              Noctis
+            </h1>
+            <p className="text-sm sm:text-base text-zinc-400 italic">
+              A dream map of your subconscious.
+            </p>
+          </header>
+
+          {/* Info panel */}
           <details
             open={infoOpen}
             onToggle={(e) => setInfoOpen(e.currentTarget.open)}
-            className="group bg-neutral-100 dark:bg-neutral-800 rounded-xl p-4 transition-all border border-neutral-200 dark:border-neutral-700"
+            className="group bg-zinc-900/30 backdrop-blur rounded-xl p-4 border border-zinc-800 mb-8"
           >
-            <summary className="flex items-center justify-between cursor-pointer list-none">
-              <span className="text-sm font-medium text-neutral-700 dark:text-neutral-200">
-                What am I looking at you ask?
-              </span>
+            <summary className="flex justify-between cursor-pointer list-none">
+              <span className="text-sm font-medium text-zinc-300">What is Noctis?</span>
               <svg
-                className="w-4 h-4 text-neutral-500 group-open:rotate-180 transition-transform"
-                xmlns="http://www.w3.org/2000/svg"
+                className="w-4 h-4 text-zinc-500 group-open:rotate-180 transition-transform"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -241,95 +198,72 @@ export default function Home() {
               </svg>
             </summary>
 
-            <div className="mt-3 text-sm text-neutral-600 dark:text-neutral-300 leading-relaxed space-y-3">
+            <div className="mt-3 text-sm text-zinc-400 leading-relaxed space-y-3">
               <p>
-                <strong>Anchors</strong> are words or ideas that connect related memories.
-                Each time you write about something, the app extracts important nouns and
-                builds links between them, gradually forming a map of your thoughts.
+                <strong>Symbols</strong> are recurring motifs in your dreams — people, places, feelings.
+                Each dream adds to their gravity, forming constellations of meaning.
               </p>
               <p>
-                <strong>Tags</strong> are optional labels you can add, like
-                <code className="px-1 py-0.5 mx-1 bg-neutral-200 dark:bg-neutral-700 rounded text-xs">cringy</code>,
-                <code className="px-1 py-0.5 mx-1 bg-neutral-200 dark:bg-neutral-700 rounded text-xs">private</code>,
-                or
-                <code className="px-1 py-0.5 mx-1 bg-neutral-200 dark:bg-neutral-700 rounded text-xs">funny</code>.
-                They help you find memories by emotion, tone, or theme later.
-              </p>
-              <p>
-                You can edit any memory, add or remove tags, and explore connected anchors
-                to see how your ideas and experiences intertwine over time.
+                <strong>Tags</strong> let you mark dreams by theme or tone —{' '}
+                <code className="bg-zinc-800 rounded px-1 py-0.5 text-xs">lucid</code>,{' '}
+                <code className="bg-zinc-800 rounded px-1 py-0.5 text-xs mx-1">nightmare</code>,{' '}
+                <code className="bg-zinc-800 rounded px-1 py-0.5 text-xs">prophetic</code> — helping you trace patterns.
               </p>
             </div>
           </details>
-        </div>
 
-        {/* Anchor Cloud */}
-        {nodes.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="text-neutral-500 dark:text-neutral-400 mb-8">
-              No anchors yet. Start by creating your first memory.
-            </p>
-            <button
-              onClick={handleNewAnchor}
-              className="px-8 py-3 bg-neutral-800 dark:bg-neutral-100 text-white dark:text-neutral-900 rounded-full hover:bg-neutral-700 dark:hover:bg-neutral-200 transition-colors"
-            >
-              Create First Anchor
-            </button>
-          </div>
-        ) : (
-          <>
-            <div className="flex flex-wrap justify-center gap-2 sm:gap-3 md:gap-4 px-2 mb-8 text-center">
-              {nodes.map((node) => (
-                <button
-                  key={node.word}
-                  onClick={() => handleAnchorClick(node.word)}
-                  className={`${getFontSize(
-                    node.count,
-                    maxCount
-                  )} font-light text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors cursor-pointer px-3 py-2 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-md`}
-                >
-                  {node.word}
-                  <span className="text-xs text-neutral-400 dark:text-neutral-600 ml-1">
-                    {node.count}
-                  </span>
-                </button>
-              ))}
-            </div>
-
-            <div className="text-center mt-8 sm:mt-12 flex flex-col sm:flex-row justify-center gap-3 flex-wrap">
+          {/* No symbols yet */}
+          {nodes.length === 0 ? (
+            <div className="text-center py-24">
+              <p className="text-zinc-500 mb-8">No dream symbols yet. Start by recording your first dream.</p>
               <button
                 onClick={handleNewAnchor}
-                className="px-6 py-2 text-sm bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-full hover:bg-neutral-300 dark:hover:bg-neutral-700 transition-colors"
+                className="px-8 py-3 bg-white text-black font-medium rounded-full hover:bg-zinc-200 transition"
               >
-                + New Anchor
+                Record Dream
               </button>
-              <button
-                onClick={handleRefreshAnchors}
-                className="px-6 py-2 text-sm bg-neutral-300 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 rounded-full hover:bg-neutral-400 dark:hover:bg-neutral-600 transition-colors"
-              >
-                Refresh Anchors
-              </button>
-              <Link
-  href="/visualize"
-  className="px-6 py-2 text-sm bg-neutral-800 dark:bg-neutral-100 text-white dark:text-neutral-900 rounded-full hover:bg-neutral-700 dark:hover:bg-neutral-200 transition-colors"
->
-  Mine my Mind
-</Link>
-
             </div>
-          </>
-        )}
+          ) : (
+            <>
+              {/* Symbol cloud */}
+              <div className="flex flex-wrap justify-center gap-4 mb-10 text-center select-none">
+                {nodes.map((node) => (
+                  <span
+                    key={node.word}
+                    className={`${getFontSize(node.count, maxCount)} text-zinc-400 hover:text-white/80 transition-colors`}
+                  >
+                    {node.word}
+                    <span className="text-xs text-zinc-700 ml-1">{node.count}</span>
+                  </span>
+                ))}
+              </div>
 
-        {/* Stats */}
-        {nodes.length > 0 && (
-          <div className="mt-12 sm:mt-20 text-center text-xs sm:text-sm text-neutral-400 dark:text-neutral-600">
-            <p>
-              {nodes.length} anchor{nodes.length !== 1 ? 's' : ''} ·{' '}
-              {entriesCount} memor{entriesCount !== 1 ? 'ies' : 'y'}
-            </p>
-          </div>
-        )}
-      </main>
-    </div>
+              {/* Action buttons */}
+              <div className="text-center mt-8 flex flex-wrap justify-center gap-3">
+                <button
+                  onClick={handleNewAnchor}
+                  className="px-6 py-2 text-sm bg-zinc-900 border border-zinc-700 text-zinc-300 rounded-full hover:bg-zinc-800 transition"
+                >
+                  + New Symbol
+                </button>
+                <Link
+                  href="/visualize"
+                  className="px-6 py-2 text-sm bg-white text-black rounded-full hover:bg-zinc-200 transition"
+                >
+                  Enter the Dream Map
+                </Link>
+              </div>
+            </>
+          )}
+
+          {/* Stats */}
+          {nodes.length > 0 && (
+            <div className="mt-12 text-center text-xs text-zinc-500">
+              {nodes.length} symbols · {entriesCount} dream{entriesCount !== 1 ? 's' : ''}
+            </div>
+          )}
+        </main>
+      </div>
+    </>
   );
 }

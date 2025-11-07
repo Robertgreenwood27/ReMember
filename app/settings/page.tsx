@@ -41,7 +41,7 @@ export default function SettingsPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `memory-jogger-export-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `dream-jogger-export-${new Date().toISOString().split('T')[0]}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -64,7 +64,7 @@ export default function SettingsPage() {
             href="/"
             className="text-sm text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
           >
-            ← Back to anchors
+            ← Back to symbols
           </Link>
         </div>
 
@@ -104,7 +104,7 @@ export default function SettingsPage() {
               {cloudData.entries}
             </p>
             <p className="text-xs text-neutral-500 dark:text-neutral-400">
-              {cloudData.nodes} anchors
+              {cloudData.nodes} symbols
             </p>
           </div>
 

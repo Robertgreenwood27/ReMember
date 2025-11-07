@@ -1,7 +1,7 @@
 export interface Entry {
   id: string;
   date: string;
-  anchor: string;
+  symbol: string;
   text: string;
   nouns: string[];
   is_private: boolean;
@@ -23,7 +23,7 @@ export interface MemoryData {
 export interface Entry {
   id: string;
   date: string;
-  anchor: string;
+  symbol: string;
   text: string;
   nouns: string[];
   is_private: boolean;

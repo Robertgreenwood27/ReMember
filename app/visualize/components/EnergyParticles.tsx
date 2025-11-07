@@ -59,13 +59,13 @@ interface Particle {
 export function EnergyParticles({
   entries,
   entryPositions,
-  anchorPositions,
+  symbolPositions,
   highlightedEntry,
   isMobile,
 }: {
   entries: Entry[];
   entryPositions: Map<string, THREE.Vector3>;
-  anchorPositions: Map<string, THREE.Vector3>;
+  symbolPositions: Map<string, THREE.Vector3>;
   highlightedEntry: string | null;
   isMobile: boolean;
 }) {
@@ -92,8 +92,8 @@ export function EnergyParticles({
       entry.nouns.forEach((noun) => {
         if (particleIndex >= particleCount) return;
 
-        const anchorPos = anchorPositions.get(noun);
-        if (!anchorPos) return;
+        const symbolPos = symbolPositions.get(noun);
+        if (!symbolPos) return;
 
         const isHighlighted = highlightedEntry === entry.id;
         const particleColor = new THREE.Color(
@@ -106,7 +106,7 @@ export function EnergyParticles({
           position: entryPos.clone(),
           velocity: new THREE.Vector3(),
           startPos: entryPos.clone(),
-          endPos: anchorPos.clone(),
+          endPos: symbolPos.clone(),
           progress: Math.random(),
           speed: isHighlighted
             ? PARTICLE_SETTINGS.speedHighlight
@@ -193,7 +193,7 @@ export function EnergyParticles({
     });
 
     return { geometry: geo, material: mat };
-  }, [entries, entryPositions, anchorPositions, highlightedEntry, isMobile]);
+  }, [entries, entryPositions, symbolPositions, highlightedEntry, isMobile]);
 
   useFrame(({ clock }) => {
     if (!particlesRef.current) return;

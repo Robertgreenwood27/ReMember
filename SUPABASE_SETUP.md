@@ -5,7 +5,7 @@ This guide will walk you through setting up cloud sync and authentication for Me
 ## Why Supabase?
 
 - ✅ **Unlimited storage** - No more localStorage limits
-- ✅ **Multi-device sync** - Access your memories anywhere
+- ✅ **Multi-device sync** - Access your dreams anywhere
 - ✅ **Built-in authentication** - Secure user accounts
 - ✅ **Real-time capabilities** - Future features like collaboration
 - ✅ **Free tier** - 500MB database, 50,000 monthly active users
@@ -89,7 +89,7 @@ For development, the default configuration works fine!
 2. You should see a "Sign In to Sync" button in the top right
 3. Click it and create an account
 4. Verify your email (check spam if needed)
-5. Sign in and start writing memories!
+5. Sign in and start writing dreams!
 
 ## Understanding the Data Flow
 
@@ -118,7 +118,7 @@ Write Memory → localStorage + Supabase → Sync when online
 - ✅ Session management
 
 ### Data Storage
-- ✅ Unlimited entries and anchors
+- ✅ Unlimited entries and symbols
 - ✅ Automatic backups
 - ✅ Multi-device sync
 - ✅ Row-level security (users can only see their own data)
@@ -131,7 +131,7 @@ Write Memory → localStorage + Supabase → Sync when online
 
 ## Migrating Existing Data
 
-If you already have memories in localStorage:
+If you already have dreams in localStorage:
 
 1. Sign up and sign in to your new account
 2. Go to **Settings** page
@@ -146,7 +146,7 @@ Memory Jogger + Supabase provides:
 - **Row-Level Security (RLS)**: Users can only access their own data
 - **Encrypted connections**: All data transmitted over HTTPS
 - **Secure authentication**: Industry-standard JWT tokens
-- **No data sharing**: Your memories are private by default
+- **No data sharing**: Your dreams are private by default
 - **GDPR compliant**: Supabase follows European privacy standards
 
 ## Database Structure
@@ -157,7 +157,7 @@ Your data is stored in two tables:
 - id (UUID)
 - user_id (references auth.users)
 - date (timestamp)
-- anchor (text)
+- symbol (text)
 - text (text)
 - nouns (text array)
 - is_private (boolean)
@@ -179,7 +179,7 @@ Your data is stored in two tables:
 - 50 MB file storage
 - Unlimited API requests
 
-**Estimated capacity**: ~50,000+ memories with typical usage
+**Estimated capacity**: ~50,000+ dreams with typical usage
 
 ### Paid Tiers
 Starting at $25/month if you exceed free tier limits.
@@ -235,7 +235,7 @@ To create manual backups:
 
 Once Supabase is set up, you can:
 
-1. ✅ Access memories from multiple devices
+1. ✅ Access dreams from multiple devices
 2. ✅ Never worry about localStorage limits
 3. ✅ Share your Memory Jogger with friends (each has own account)
 4. ✅ Build additional features (search, analytics, etc.)

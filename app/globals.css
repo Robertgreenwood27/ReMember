@@ -12,29 +12,37 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* Dark mode – black everywhere except the home page */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
+    --background: #000000;   /* solid black */
     --foreground: #ededed;
   }
 }
 
+/* Default body – black background for all pages */
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
 }
 
+/* ---------- STARFIELD ANIMATIONS ---------- */
+@keyframes floatStars {
+  from { background-position: 0 0; }
+  to   { background-position: 2000px 2000px; }
+}
+@keyframes floatStars2 {
+  from { background-position: 0 0; }
+  to   { background-position: -2500px 2500px; }
+}
 
+/* slide-up animation (you already use it) */
 @keyframes slide-up {
-  from {
-    transform: translateY(100%);
-  }
-  to {
-    transform: translateY(0);
-  }
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
 }
-
-.animate-slide-up {
-  animation: slide-up 0.3s ease-out;
-}
+.animate-slide-up { animation: slide-up 0.3s ease-out; }

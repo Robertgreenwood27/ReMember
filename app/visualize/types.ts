@@ -8,7 +8,7 @@ export interface EntryNode {
   position: THREE.Vector3;
 }
 
-export interface AnchorNode {
+export interface SymbolNode {
   word: string;
   position: THREE.Vector3;
   parentEntries: string[];

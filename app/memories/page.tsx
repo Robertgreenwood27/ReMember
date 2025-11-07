@@ -2,14 +2,14 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { getEntriesForAnchor, updateEntry } from '@/lib/storage-supabase';
+import { getEntriesForSymbol, updateEntry } from '@/lib/storage-supabase';
 import { Entry } from '@/lib/types';
 import Link from 'next/link';
 
 function MemoriesPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const anchor = searchParams.get('anchor') || '';
+  const symbol = searchParams.get('symbol') || '';
 
   const [entries, setEntries] = useState<Entry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -21,14 +21,14 @@ function MemoriesPageContent() {
 
   useEffect(() => {
     async function loadEntries() {
-      if (anchor) {
-        const data = await getEntriesForAnchor(anchor);
+      if (symbol) {
+        const data = await getEntriesForSymbol(symbol);
         setEntries(data);
       }
       setIsLoading(false);
     }
     loadEntries();
-  }, [anchor]);
+  }, [symbol]);
 
   const toggleExpanded = (id: string) => {
     setExpandedEntry(expandedEntry === id ? null : id);
@@ -48,7 +48,7 @@ function MemoriesPageContent() {
   const handleSaveEdit = async (entryId: string) => {
     try {
       await updateEntry(entryId, editText, editTags);
-      const updated = await getEntriesForAnchor(anchor);
+      const updated = await getEntriesForSymbol(symbol);
       setEntries(updated);
       setEditingEntry(null);
     } catch (error) {
@@ -57,10 +57,10 @@ function MemoriesPageContent() {
     }
   };
 
-  if (!anchor) {
+  if (!symbol) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-900">
-        <div className="text-neutral-500">No anchor specified</div>
+        <div className="text-neutral-500">No symbol specified</div>
       </div>
     );
   }
@@ -68,7 +68,7 @@ function MemoriesPageContent() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-900">
-        <div className="text-neutral-500">Loading memories...</div>
+        <div className="text-neutral-500">Loading dreams...</div>
       </div>
     );
   }
@@ -82,15 +82,15 @@ function MemoriesPageContent() {
             href="/"
             className="text-sm text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 mb-6 inline-block transition-colors"
           >
-            ← Back to anchors
+            ← Back to symbols
           </Link>
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
             <h1 className="text-3xl sm:text-5xl font-light text-neutral-800 dark:text-neutral-100 break-words">
-              {anchor}
+              {symbol}
             </h1>
             <Link
-              href={`/write?anchor=${encodeURIComponent(anchor)}`}
+              href={`/write?symbol=${encodeURIComponent(symbol)}`}
               className="px-6 py-2 text-sm bg-neutral-800 dark:bg-neutral-100 text-white dark:text-neutral-900 rounded-full hover:bg-neutral-700 dark:hover:bg-neutral-200 transition-colors"
             >
               + Write New
@@ -98,7 +98,7 @@ function MemoriesPageContent() {
           </div>
 
           <p className="text-neutral-500 dark:text-neutral-400 text-sm">
-            {entries.length} {entries.length === 1 ? 'memory' : 'memories'}
+            {entries.length} {entries.length === 1 ? 'dream' : 'dreams'}
           </p>
         </header>
 
@@ -106,10 +106,10 @@ function MemoriesPageContent() {
         {entries.length === 0 ? (
           <div className="text-center py-20">
             <p className="text-neutral-500 dark:text-neutral-400 mb-8">
-              No memories yet for this anchor.
+              No dreams yet for this symbol.
             </p>
             <Link
-              href={`/write?anchor=${encodeURIComponent(anchor)}`}
+              href={`/write?symbol=${encodeURIComponent(symbol)}`}
               className="px-8 py-3 bg-neutral-800 dark:bg-neutral-100 text-white dark:text-neutral-900 rounded-full hover:bg-neutral-700 dark:hover:bg-neutral-200 transition-colors inline-block"
             >
               Write First Memory
@@ -259,20 +259,20 @@ function MemoriesPageContent() {
                     </div>
                   )}
 
-                  {/* Connected Anchors */}
+                  {/* Connected Symbols */}
                   {entry.nouns.length > 0 && (
                     <div className="mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
                       <div className="text-xs text-neutral-400 dark:text-neutral-500 mb-2">
-                        Connected anchors:
+                        Connected symbols:
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {entry.nouns
-                          .filter((noun) => noun !== anchor.toLowerCase())
+                          .filter((noun) => noun !== symbol.toLowerCase())
                           .slice(0, 10)
                           .map((noun) => (
                             <Link
                               key={noun}
-                              href={`/memories?anchor=${encodeURIComponent(noun)}`}
+                              href={`/dreams?symbol=${encodeURIComponent(noun)}`}
                               className="text-xs px-3 py-1 bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300 rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-600 transition-colors"
                             >
                               {noun}

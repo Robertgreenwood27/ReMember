@@ -161,7 +161,7 @@ export default function NeuralVisualizationPage() {
     const query = searchQuery.toLowerCase();
     return entries.filter((e) =>
       e.text.toLowerCase().includes(query) ||
-      e.anchor.toLowerCase().includes(query) ||
+      e.symbol.toLowerCase().includes(query) ||
       e.nouns.some((n) => n.toLowerCase().includes(query)) ||
       (e.tags && e.tags.some((t) => t.toLowerCase().includes(query)))
     );
@@ -228,14 +228,14 @@ export default function NeuralVisualizationPage() {
           <Brain size={64} className="mx-auto mb-4 text-cyan-400" />
           <div className="text-2xl mb-2">No Neural Memories</div>
           <div className="text-gray-400">
-            Start creating entries to build your memory network
+            Start creating entries to build your dream network
           </div>
         </div>
       </div>
     );
   }
 
-  const totalAnchors = new Set(entries.flatMap((e) => e.nouns)).size;
+  const totalSymbols = new Set(entries.flatMap((e) => e.nouns)).size;
   const totalTags = new Set(entries.flatMap((e) => e.tags || [])).size;
 
   /* ==============================
@@ -269,7 +269,7 @@ export default function NeuralVisualizationPage() {
       ) : (
         <DesktopUI
           filteredEntries={filteredEntries}
-          totalAnchors={totalAnchors}
+          totalSymbols={totalSymbols}
           totalTags={totalTags}
           hoveredEntryData={hoveredEntryData}
           selectedEntryData={selectedEntryData}
@@ -478,7 +478,7 @@ function MobileUI({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search neural memories..."
+              placeholder="Search neural dreams..."
               className="w-full bg-black/90 text-white pl-12 pr-4 py-3.5 rounded-2xl border border-cyan-500/30 focus:border-cyan-500/60 focus:outline-none"
               autoFocus
             />
@@ -506,8 +506,8 @@ function MobileUI({
               </button>
             </div>
             <div className="space-y-3 text-sm text-gray-300">
-              <p><span className="text-cyan-300">Cyan neurons</span> are your memories</p>
-              <p><span className="text-yellow-300">Yellow nodes</span> are neural anchors</p>
+              <p><span className="text-cyan-300">Cyan neurons</span> are your dreams</p>
+              <p><span className="text-yellow-300">Yellow nodes</span> are neural symbols</p>
               <p><span className="text-pink-300">Pink connections</span> link emotional tags</p>
               <p>Watch the <span className="text-white font-medium">electrical pulses</span> flow</p>
               <p className="pt-2 border-t border-white/10 text-cyan-300">
@@ -530,7 +530,7 @@ function MobileUI({
 
 function DesktopUI({
   filteredEntries,
-  totalAnchors,
+  totalSymbols,
   totalTags,
   hoveredEntryData,
   selectedEntryData,
@@ -559,7 +559,7 @@ function DesktopUI({
           <div className="flex items-center gap-2">
             <Brain size={14} className="text-yellow-400" />
             <span>
-              <span className="text-yellow-300 font-semibold">{totalAnchors}</span> anchors
+              <span className="text-yellow-300 font-semibold">{totalSymbols}</span> symbols
             </span>
           </div>
           {totalTags > 0 && (
@@ -579,7 +579,7 @@ function DesktopUI({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search neural memories..."
+            placeholder="Search neural dreams..."
             className="w-full bg-black/60 text-white pl-10 pr-3 py-2.5 rounded-xl border border-cyan-500/30 focus:border-cyan-500/60 focus:outline-none text-sm"
           />
           {searchQuery && (
@@ -592,7 +592,7 @@ function DesktopUI({
           )}
         </div>
 
-        {/* Random memory */}
+        {/* Random dream */}
         <button
           onClick={handleRandomMemory}
           className="w-full bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-400/30 hover:border-cyan-400/50 text-cyan-300 px-4 py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 mb-4"
@@ -603,8 +603,8 @@ function DesktopUI({
 
         {/* Legend */}
         <div className="text-xs text-gray-400 space-y-2 border-t border-white/10 pt-4">
-          <p><span className="text-cyan-300">Cyan neurons</span> store memories</p>
-          <p><span className="text-yellow-300">Yellow nodes</span> are neural anchors</p>
+          <p><span className="text-cyan-300">Cyan neurons</span> store dreams</p>
+          <p><span className="text-yellow-300">Yellow nodes</span> are neural symbols</p>
           <p><span className="text-pink-300">Pink connections</span> link emotions</p>
         </div>
       </div>
@@ -613,7 +613,7 @@ function DesktopUI({
       {hoveredEntryData && !selectedEntryData && (
         <div className="absolute top-6 left-1/2 -translate-x-1/2 z-10 bg-black/90 text-white px-5 py-3 rounded-xl max-w-sm text-center border border-cyan-500/30">
           <div className="text-sm font-semibold text-cyan-300 flex items-center justify-center gap-2">
-            <Zap size={14} /> {hoveredEntryData.anchor}
+            <Zap size={14} /> {hoveredEntryData.symbol}
           </div>
           <div className="text-xs text-gray-400 mt-1">
             {new Date(hoveredEntryData.date).toLocaleDateString('en-US', {

@@ -34,7 +34,7 @@ export function MobileMemorySheet({
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1">
                 <h2 className="text-xl font-bold text-white mb-1">
-                  {entry.anchor}
+                  {entry.symbol}
                 </h2>
                 <div className="flex items-center gap-2 text-sm text-gray-400">
                   <Calendar size={14} className="text-cyan-400" />
@@ -82,13 +82,13 @@ export function MobileMemorySheet({
               </div>
             )}
 
-            {/* Anchors/Nouns */}
+            {/* Symbols/Nouns */}
             {entry.nouns && entry.nouns.length > 0 && (
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <LinkIcon size={16} className="text-yellow-400" />
                   <span className="text-sm font-semibold text-gray-300">
-                    Neural Anchors
+                    Neural Symbols
                   </span>
                 </div>
                 <div className="flex flex-wrap gap-2">
