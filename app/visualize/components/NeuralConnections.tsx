@@ -518,21 +518,22 @@ function TagLabel({
 
   return (
     <Text
-      ref={textRef}
-      position={position}
-      fontSize={fontSize}
-      color={
-        highlighted
-          ? CONNECTION_SETTINGS.tagTextHighlightColor
-          : CONNECTION_SETTINGS.tagTextColor
-      }
-      symbolX="center"
-      symbolY="middle"
-      outlineWidth={CONNECTION_SETTINGS.labelOutline}
-      outlineColor="#000000"
-      fillOpacity={textOpacity}
-    >
-      #{tag}
-    </Text>
+  ref={textRef}
+  position={position}
+  fontSize={fontSize}
+  color={
+    highlighted
+      ? CONNECTION_SETTINGS.tagTextHighlightColor
+      : CONNECTION_SETTINGS.tagTextColor
+  }
+  anchorX="center"
+  anchorY="middle"
+  outlineWidth={CONNECTION_SETTINGS.labelOutline}
+  outlineColor="#000000"
+  fillOpacity={textOpacity}
+>
+  #{tag}
+</Text>
+
   );
 }
