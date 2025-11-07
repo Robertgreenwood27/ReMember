@@ -229,8 +229,8 @@ const tagColors: { [key: string]: string } = {
         <Text
           fontSize={fontSize}
           color={textColor}
-          symbolX="center"
-          symbolY="middle"
+          anchorX="center"
+          anchorY="middle"
           outlineWidth={NEURON_SETTINGS.outlineWidth}
           outlineColor="#000000"
           fillOpacity={isDimmed ? 0.2 : 1}
