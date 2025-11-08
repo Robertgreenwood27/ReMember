@@ -13,6 +13,8 @@ import { MobileDreamSheet } from './components/MobileDreamSheet';
 import { DesktopInfoPanel } from './components/DesktopInfoPanel';
 import { EffectComposer, Bloom, ChromaticAberration } from '@react-three/postprocessing';
 import { BlendFunction } from 'postprocessing';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
 
 /* ==============================
    🎛️ VISUAL PAGE SETTINGS PANEL
@@ -91,6 +93,8 @@ export default function NeuralVisualizationPage() {
   const isMobile = useIsMobile();
   const cameraRef = useRef<THREE.Camera | null>(null);
   const controlsRef = useRef<any>(null);
+  const router = useRouter();
+
 
   /* ==============================
      🧠 Load Data
@@ -187,6 +191,22 @@ export default function NeuralVisualizationPage() {
      ============================== */
   return (
     <div className="w-screen h-screen bg-black relative touch-none overflow-hidden">
+
+ {/* 🔙 Back Arrow Button (responsive positioning) */}
+<button
+  onClick={() => router.push('/')}
+  className={`fixed ${
+    isMobile ? 'top-20 right-5' : 'top-6 right-6'
+  } z-50 p-3 bg-black/70 hover:bg-black/90 border border-cyan-500/30 hover:border-cyan-400/60 rounded-2xl text-cyan-300 backdrop-blur-md transition-all`}
+  aria-label="Back to Home"
+>
+  <ArrowLeft size={20} />
+</button>
+
+
+      
+       
+
       {/* 🧭 UI Panels (mobile + desktop) */}
       {isMobile ? (
         <MobileUI
@@ -214,7 +234,12 @@ export default function NeuralVisualizationPage() {
         />
       )}
 
+      
+
       {/* 🧠 Neural Canvas */}
+
+      
+
       <Canvas
         camera={{
           position: isMobile
@@ -340,6 +365,8 @@ export default function NeuralVisualizationPage() {
         )}
       </Canvas>
 
+      
+
       {/* 🎨 Minor Animations */}
       <style jsx global>{`
         @keyframes slide-up {
@@ -391,6 +418,8 @@ function MobileUI({
           onClick={() => setShowSearch(!showSearch)}
           className="bg-black/80 p-3 rounded-2xl border border-cyan-500/20 hover:border-cyan-500/40"
         >
+
+          
           <Search size={18} />
         </button>
         <button
