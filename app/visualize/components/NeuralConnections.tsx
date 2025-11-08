@@ -10,363 +10,222 @@ import { Text } from '@react-three/drei';
    🎛️ CONNECTION SETTINGS PANEL
    ============================== */
 const CONNECTION_SETTINGS = {
-  // 🎨 Colors — cool desaturated neutrals with warm highlights
-  nounLineColor: '#3a4a54',          // deep blue-gray
-  nounHighlightColor: '#8cbec9',     // pale cyan glow
-  tagLineColor: '#7e6550',           // muted bronze-brown
-  tagHighlightColor: '#d0a970',      // soft golden highlight
-  tagTextColor: '#a48a6b',           // warm desaturated sand
-  tagTextHighlightColor: '#e2cf9e',  // light amber for legibility
+  nounLineColor: '#3a4a54',
+  nounHighlightColor: '#8cbec9',
+  tagLineColor: '#7e6550',
+  tagHighlightColor: '#d0a970',
+  tagTextColor: '#a48a6b',
+  tagTextHighlightColor: '#e2cf9e',
 
-  // 🌈 Opacity — balanced translucency
-  nounOpacityDefault: 0.30,
-  nounOpacityMobile: 0.22,
-  nounOpacityHighlighted: 0.72,
-  nounOpacityDimmed: 0.05,
+  nounOpacityDefault: 0.35,
+  nounOpacityHighlighted: 0.8,
+  nounOpacityDimmed: 0.08,
 
   tagOpacityDefault: 0.55,
-  tagOpacityHighlighted: 0.90,
-  tagOpacityDimmed: 0.05,
+  tagOpacityHighlighted: 0.9,
+  tagOpacityDimmed: 0.08,
 
-  // 💫 Pulse & Glow — float-safe numeric values
-  nounPulseSpeed: { base: 0.20, highlighted: 0.45 },
-  tagPulseSpeed: { base: 0.25, highlighted: 0.60 },
-  pulseWidth: 0.10,            // controls how thick the pulse wave is
-  pulseBrightness: 2.4,        // overall brightness multiplier
-  baseBrightness: 0.35,        // baseline emission intensity
-
-  // 🧩 Line Width — slightly thinner for subtlety
-  nounLineWidth: { base: 1.4, highlighted: 2.4 },
-  tagLineWidth: { base: 3.2, highlighted: 4.4 },
-
-  // 📝 Label — smaller and softer
   fontSize: { desktop: 0.14, mobile: 0.11 },
   labelOutline: 0.018,
-  labelOpacityMultiplier: 0.90,
+  labelOpacityMultiplier: 0.9,
+
+  pulseSpeed: 0.6,
+  glowIntensity: 2.5,
+  distanceFade: 0.006,
 };
 
 /* ==============================
    🧠 NeuralConnections Component
    ============================== */
-export function NeuralConnections({ 
-  entries, 
+export function NeuralConnections({
+  entries,
   entryPositions,
   symbolPositions,
   highlightedEntry,
-  isMobile
-}: { 
+  isMobile,
+}: {
   entries: Entry[];
   entryPositions: Map<string, THREE.Vector3>;
   symbolPositions: Map<string, THREE.Vector3>;
   highlightedEntry: string | null;
   isMobile: boolean;
 }) {
-  const { nounLines, tagLines } = useMemo(() => {
-    const nounResult: Array<{ 
-      start: THREE.Vector3; 
-      end: THREE.Vector3; 
-      opacity: number; 
-      highlighted: boolean;
-      entryId: string;
-      length: number;
-    }> = [];
-    
-    const tagResult: Array<{
-      start: THREE.Vector3;
-      end: THREE.Vector3;
-      opacity: number;
-      highlighted: boolean;
+  const { nounGeometry, tagGeometry, tagLabels } = useMemo(() => {
+    const nounPos: number[] = [];
+    const nounColors: number[] = [];
+    const tagPos: number[] = [];
+    const tagColors: number[] = [];
+    const labels: {
+      position: THREE.Vector3;
       tag: string;
-      midpoint: THREE.Vector3;
-      length: number;
-    }> = [];
+      highlighted: boolean;
+      opacity: number;
+    }[] = [];
 
-    // Noun-based connections (entry → symbol)
-    entries.forEach((entry) => {
+    const nounBase = new THREE.Color(CONNECTION_SETTINGS.nounLineColor);
+    const nounHighlight = new THREE.Color(CONNECTION_SETTINGS.nounHighlightColor);
+    const tagBase = new THREE.Color(CONNECTION_SETTINGS.tagLineColor);
+    const tagHighlight = new THREE.Color(CONNECTION_SETTINGS.tagHighlightColor);
+    const scale = isMobile ? 0.9 : 1.0;
+
+    // 🧬 Noun lines (entry → symbol)
+    for (const entry of entries) {
       const entryPos = entryPositions.get(entry.id);
-      if (!entryPos) return;
-
-      entry.nouns.forEach((noun) => {
+      if (!entryPos) continue;
+      const isHighlight = highlightedEntry === entry.id;
+      for (const noun of entry.nouns) {
         const symbolPos = symbolPositions.get(noun);
-        if (!symbolPos) return;
-
-        const isRelated = highlightedEntry === entry.id;
-        const opacity = highlightedEntry
-          ? (isRelated
-              ? CONNECTION_SETTINGS.nounOpacityHighlighted
-              : CONNECTION_SETTINGS.nounOpacityDimmed)
-          : (isMobile
-              ? CONNECTION_SETTINGS.nounOpacityMobile
-              : CONNECTION_SETTINGS.nounOpacityDefault);
-
-        const length = entryPos.distanceTo(symbolPos);
-
-        nounResult.push({
-          start: entryPos,
-          end: symbolPos,
-          opacity,
-          highlighted: isRelated,
-          entryId: entry.id,
-          length,
-        });
-      });
-    });
-
-    // Tag-based connections (entry ↔ entry)
-    const tagGroups = new Map<string, string[]>();
-    entries.forEach((entry) => {
-      if (entry.tags && entry.tags.length > 0) {
-        entry.tags.forEach((tag) => {
-          if (!tagGroups.has(tag)) tagGroups.set(tag, []);
-          tagGroups.get(tag)!.push(entry.id);
-        });
+        if (!symbolPos) continue;
+        const color = isHighlight
+          ? nounHighlight
+          : highlightedEntry
+          ? nounBase.clone().multiplyScalar(0.3)
+          : nounBase;
+        nounPos.push(
+          entryPos.x,
+          entryPos.y,
+          entryPos.z,
+          symbolPos.x,
+          symbolPos.y,
+          symbolPos.z
+        );
+        for (let i = 0; i < 2; i++)
+          nounColors.push(color.r * scale, color.g * scale, color.b * scale);
       }
-    });
+    }
 
-    tagGroups.forEach((entryIds, tag) => {
-      if (entryIds.length < 2) return;
+    // 🏷️ Tag lines (entry ↔ entry)
+    const tagGroups = new Map<string, string[]>();
+    for (const e of entries)
+      for (const t of e.tags ?? [])
+        tagGroups.set(t, [...(tagGroups.get(t) ?? []), e.id]);
 
-      for (let i = 0; i < entryIds.length; i++) {
-        for (let j = i + 1; j < entryIds.length; j++) {
-          const pos1 = entryPositions.get(entryIds[i]);
-          const pos2 = entryPositions.get(entryIds[j]);
-          if (!pos1 || !pos2) continue;
-
-          const isRelated =
-            highlightedEntry === entryIds[i] ||
-            highlightedEntry === entryIds[j];
-          const opacity = highlightedEntry
-            ? (isRelated
-                ? CONNECTION_SETTINGS.tagOpacityHighlighted
-                : CONNECTION_SETTINGS.tagOpacityDimmed)
-            : CONNECTION_SETTINGS.tagOpacityDefault;
-
-          const midpoint = new THREE.Vector3()
-            .addVectors(pos1, pos2)
-            .multiplyScalar(0.5);
-          const length = pos1.distanceTo(pos2);
-
-          tagResult.push({
-            start: pos1,
-            end: pos2,
-            opacity,
-            highlighted: isRelated,
+    for (const [tag, ids] of tagGroups) {
+      if (ids.length < 2) continue;
+      for (let i = 0; i < ids.length; i++)
+        for (let j = i + 1; j < ids.length; j++) {
+          const a = entryPositions.get(ids[i]);
+          const b = entryPositions.get(ids[j]);
+          if (!a || !b) continue;
+          const highlight =
+            highlightedEntry === ids[i] || highlightedEntry === ids[j];
+          const c = highlight
+            ? tagHighlight
+            : highlightedEntry
+            ? tagBase.clone().multiplyScalar(0.3)
+            : tagBase;
+          tagPos.push(a.x, a.y, a.z, b.x, b.y, b.z);
+          for (let i2 = 0; i2 < 2; i2++)
+            tagColors.push(c.r * scale, c.g * scale, c.b * scale);
+          const mid = new THREE.Vector3().addVectors(a, b).multiplyScalar(0.5);
+          labels.push({
+            position: mid,
             tag,
-            midpoint,
-            length,
+            highlighted: highlight,
+            opacity: highlight
+              ? CONNECTION_SETTINGS.tagOpacityHighlighted
+              : CONNECTION_SETTINGS.tagOpacityDefault,
           });
         }
-      }
-    });
+    }
 
-    return { nounLines: nounResult, tagLines: tagResult };
+    const buildGeo = (p: number[], c: number[]) => {
+      if (p.length === 0) return null;
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(p, 3));
+      geo.setAttribute('color', new THREE.Float32BufferAttribute(c, 3));
+      return geo;
+    };
+
+    return {
+      nounGeometry: buildGeo(nounPos, nounColors),
+      tagGeometry: buildGeo(tagPos, tagColors),
+      tagLabels: labels,
+    };
   }, [entries, entryPositions, symbolPositions, highlightedEntry, isMobile]);
+
+  const nounMat = useMemo(
+    () => makeLineShaderMaterial(CONNECTION_SETTINGS.nounOpacityDefault),
+    []
+  );
+  const tagMat = useMemo(
+    () => makeLineShaderMaterial(CONNECTION_SETTINGS.tagOpacityDefault),
+    []
+  );
+
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime;
+    nounMat.uniforms.time.value = t;
+    tagMat.uniforms.time.value = t;
+  });
 
   return (
     <>
-      {/* 🧬 Noun Connections */}
-      {nounLines.map((line, i) => (
-        <PulsingLine
-          key={`noun-${i}`}
-          start={line.start}
-          end={line.end}
-          color={
-            line.highlighted
-              ? new THREE.Color(CONNECTION_SETTINGS.nounHighlightColor)
-              : new THREE.Color(CONNECTION_SETTINGS.nounLineColor)
-          }
-          opacity={line.opacity}
-          pulseSpeed={
-            line.highlighted
-              ? CONNECTION_SETTINGS.nounPulseSpeed.highlighted
-              : CONNECTION_SETTINGS.nounPulseSpeed.base
-          }
-          lineWidth={
-            line.highlighted
-              ? CONNECTION_SETTINGS.nounLineWidth.highlighted
-              : CONNECTION_SETTINGS.nounLineWidth.base
-          }
-          length={line.length}
+      {nounGeometry && <lineSegments geometry={nounGeometry} material={nounMat} />}
+      {tagGeometry && <lineSegments geometry={tagGeometry} material={tagMat} />}
+      {tagLabels.map((l, i) => (
+        <TagLabel
+          key={i}
+          position={l.position}
+          tag={l.tag}
+          highlighted={l.highlighted}
+          opacity={l.opacity}
+          isMobile={isMobile}
         />
-      ))}
-
-      {/* 🏷️ Tag Connections */}
-      {tagLines.map((line, i) => (
-        <group key={`tag-${i}`}>
-          <PulsingLine
-            start={line.start}
-            end={line.end}
-            color={
-              line.highlighted
-                ? new THREE.Color(CONNECTION_SETTINGS.tagHighlightColor)
-                : new THREE.Color(CONNECTION_SETTINGS.tagLineColor)
-            }
-            opacity={line.opacity}
-            pulseSpeed={
-              line.highlighted
-                ? CONNECTION_SETTINGS.tagPulseSpeed.highlighted
-                : CONNECTION_SETTINGS.tagPulseSpeed.base
-            }
-            lineWidth={
-              line.highlighted
-                ? CONNECTION_SETTINGS.tagLineWidth.highlighted
-                : CONNECTION_SETTINGS.tagLineWidth.base
-            }
-            length={line.length}
-          />
-          <TagLabel
-            position={line.midpoint}
-            tag={line.tag}
-            opacity={line.opacity}
-            highlighted={line.highlighted}
-            isMobile={isMobile}
-          />
-        </group>
       ))}
     </>
   );
 }
 
 /* ==============================
-   ⚡ Pulsing Line
+   💡 Animated Shader Line Material
    ============================== */
-function PulsingLine({
-  start,
-  end,
-  color,
-  opacity,
-  pulseSpeed,
-  lineWidth,
-  length,
-}: {
-  start: THREE.Vector3;
-  end: THREE.Vector3;
-  color: THREE.Color;
-  opacity: number;
-  pulseSpeed: number;
-  lineWidth: number;
-  length: number;
-}) {
-  const materialRef = useRef<THREE.ShaderMaterial | null>(null);
-
-  // Slightly curved Catmull-Rom spline instead of a dead-straight line
-  const curve = useMemo(() => {
-    const a = start.clone();
-    const b = end.clone();
-    const mid = new THREE.Vector3().addVectors(a, b).multiplyScalar(0.5);
-
-    const dir = new THREE.Vector3().subVectors(b, a).normalize();
-    const up = new THREE.Vector3(0, 1, 0);
-    const side = new THREE.Vector3().crossVectors(dir, up);
-
-    if (side.lengthSq() < 0.0001) {
-      // Fallback if direction is almost vertical
-      side.set(1, 0, 0);
-    } else {
-      side.normalize();
-    }
-
-    const bendAmount = Math.min(1.0, length * 0.12); // adjust to taste
-    mid.addScaledVector(side, bendAmount);
-
-    return new THREE.CatmullRomCurve3([a, mid, b]);
-  }, [start, end, length]);
-
-  // TubeGeometry so it feels like a glowing cable
-  const geometry = useMemo(() => {
-    const tubularSegments = Math.max(12, Math.floor(length * 4));
-  const radius = lineWidth * 0.006;
-  const radialSegments = 4;
-
-    return new THREE.TubeGeometry(curve, tubularSegments, radius, radialSegments, false);
-  }, [curve, lineWidth, length]);
-
-  const material = useMemo(() => {
-    const mat = new THREE.ShaderMaterial({
-      uniforms: {
-        time: { value: 0 },
-        color: { value: new THREE.Color(color) },
-        pulseSpeed: { value: pulseSpeed },
-        opacity: { value: opacity },
-      },
-      vertexShader: `
-        varying float vAlong;
-        varying float vRadial;
-
-        void main() {
-          // TubeGeometry gives us uv.x along the length, uv.y around the circumference
-          vAlong = uv.x;
-          vRadial = uv.y;
-
-          vec4 worldPos = modelMatrix * vec4(position, 1.0);
-          gl_Position = projectionMatrix * viewMatrix * worldPos;
-        }
-      `,
-      fragmentShader: `
-        uniform float time;
-        uniform vec3 color;
-        uniform float pulseSpeed;
-        uniform float opacity;
-
-        varying float vAlong;
-        varying float vRadial;
-
-        void main() {
-          // Center vs edge of the tube for core/halo effect
-          float radialCenter = 1.0 - abs(vRadial * 2.0 - 1.0);
-          float core = smoothstep(0.2, 1.0, radialCenter);
-
-          // Two pulses traveling along the cable
-          float head1 = fract(time * pulseSpeed);
-          float head2 = fract(time * pulseSpeed * 0.6 + 0.35);
-
-          float pulseWidth = 0.12;
-          float d1 = abs(vAlong - head1);
-          float d2 = abs(vAlong - head2);
-
-          float wave1 = smoothstep(pulseWidth, 0.0, d1);
-          float wave2 = smoothstep(pulseWidth, 0.0, d2);
-          float pulses = max(wave1, wave2);
-
-          // Base glow along entire line (so it's always visible)
-          float baseGlow = 0.20 + 0.30 * core;
-
-          // Extra intensity where the pulses are
-          float pulseGlow = pulses * (1.5 + core);
-
-          float glow = baseGlow + pulseGlow;
-
-          vec3 lineColor = color * (0.4 + glow * 2.4);
-          float alpha = opacity * (0.3 + glow * 0.8);
-
-          if (alpha < 0.02) discard;
-
-          gl_FragColor = vec4(lineColor, alpha);
-        }
-      `,
-      transparent: true,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-    });
-
-    materialRef.current = mat;
-    return mat;
-  }, [color, pulseSpeed, opacity]);
-
-  useFrame(({ clock }) => {
-    if (materialRef.current) {
-      materialRef.current.uniforms.time.value = clock.getElapsedTime();
-      materialRef.current.uniforms.opacity.value = opacity;
-      materialRef.current.uniforms.pulseSpeed.value = pulseSpeed;
-    }
+function makeLineShaderMaterial(baseOpacity: number) {
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      time: { value: 0 },
+      opacity: { value: baseOpacity },
+      glowIntensity: { value: CONNECTION_SETTINGS.glowIntensity },
+      distanceFade: { value: CONNECTION_SETTINGS.distanceFade },
+      pulseSpeed: { value: CONNECTION_SETTINGS.pulseSpeed },
+    },
+    vertexShader: `
+      uniform float time;
+      varying vec3 vColor;
+      varying float vDepth;
+      void main() {
+        vColor = color;
+        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+        vDepth = -mvPosition.z;
+        gl_Position = projectionMatrix * mvPosition;
+      }
+    `,
+    fragmentShader: `
+      uniform float time;
+      uniform float opacity;
+      uniform float glowIntensity;
+      uniform float distanceFade;
+      uniform float pulseSpeed;
+      varying vec3 vColor;
+      varying float vDepth;
+      void main() {
+        float pulse = 0.5 + 0.5 * sin(time * pulseSpeed + vDepth * 0.03);
+        float depthFade = 1.0 / (1.0 + vDepth * distanceFade);
+        vec3 col = vColor * (0.4 + pulse * glowIntensity * depthFade);
+        float alpha = opacity * depthFade * (0.6 + pulse * 0.6);
+        gl_FragColor = vec4(col, alpha);
+        if (gl_FragColor.a < 0.02) discard;
+      }
+    `,
+    transparent: true,
+    vertexColors: true,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
   });
-
-  return <mesh geometry={geometry} material={material} />;
 }
 
-
 /* ==============================
-   🏷️ Tag Label
+   🏷️ Tag Label Component
    ============================== */
 function TagLabel({
   position,
@@ -382,16 +241,12 @@ function TagLabel({
   isMobile: boolean;
 }) {
   const textRef = useRef<any>(null);
-
   useFrame(({ camera }) => {
     if (textRef.current) textRef.current.lookAt(camera.position);
   });
-
   const fontSize = isMobile
     ? CONNECTION_SETTINGS.fontSize.mobile
     : CONNECTION_SETTINGS.fontSize.desktop;
-  const textOpacity = opacity * CONNECTION_SETTINGS.labelOpacityMultiplier;
-
   return (
     <Text
       ref={textRef}
@@ -405,8 +260,8 @@ function TagLabel({
       anchorX="center"
       anchorY="middle"
       outlineWidth={CONNECTION_SETTINGS.labelOutline}
-      outlineColor="#000000"
-      fillOpacity={textOpacity}
+      outlineColor="#000"
+      fillOpacity={opacity * CONNECTION_SETTINGS.labelOpacityMultiplier}
     >
       #{tag}
     </Text>
