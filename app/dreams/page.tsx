@@ -6,7 +6,41 @@ import { getEntriesForSymbol, updateEntry } from '@/lib/storage-supabase';
 import { Entry } from '@/lib/types';
 import Link from 'next/link';
 
-function MemoriesPageContent() {
+/* ============================================
+   💬 TAG DEFINITIONS
+============================================ */
+const TAG_DEFINITIONS: Record<string, string> = {
+  shadow: 'The unconscious aspects of yourself you hide or deny.',
+  anima: 'The feminine inner archetype in a man’s psyche.',
+  animus: 'The masculine inner archetype in a woman’s psyche.',
+  self: 'The integrated totality of the psyche; wholeness.',
+  ego: 'The conscious identity that mediates between self and world.',
+};
+
+/* ============================================
+   🏷️ CURATED TAG CATEGORIES
+============================================ */
+const TAG_CATEGORIES: Record<string, string[]> = {
+  Mood: ['calm', 'anxious', 'ecstatic', 'angry', 'fearful', 'peaceful'],
+  Clarity: ['lucid', 'vivid', 'fragmented', 'blurry'],
+  Theme: [
+    'falling',
+    'flying',
+    'pursuit',
+    'transformation',
+    'death',
+    'birth',
+    'loss',
+    'discovery',
+  ],
+  Archetype: ['shadow', 'anima', 'animus', 'self', 'ego'],
+  Source: ['recurring', 'childhood', 'recent_event'],
+};
+
+/* ============================================
+   🌙 DREAMS PAGE CONTENT
+============================================ */
+function DreamsPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const symbol = searchParams.get('symbol') || '';
@@ -17,7 +51,6 @@ function MemoriesPageContent() {
   const [editingEntry, setEditingEntry] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
   const [editTags, setEditTags] = useState<string[]>([]);
-  const [newTag, setNewTag] = useState('');
 
   useEffect(() => {
     async function loadEntries() {
@@ -30,20 +63,8 @@ function MemoriesPageContent() {
     loadEntries();
   }, [symbol]);
 
-  const toggleExpanded = (id: string) => {
+  const toggleExpanded = (id: string) =>
     setExpandedEntry(expandedEntry === id ? null : id);
-  };
-
-  const addTag = () => {
-    if (newTag.trim() && !editTags.includes(newTag.trim().toLowerCase())) {
-      setEditTags([...editTags, newTag.trim().toLowerCase()]);
-      setNewTag('');
-    }
-  };
-
-  const removeTag = (tag: string) => {
-    setEditTags(editTags.filter((t) => t !== tag));
-  };
 
   const handleSaveEdit = async (entryId: string) => {
     try {
@@ -73,6 +94,9 @@ function MemoriesPageContent() {
     );
   }
 
+  /* ============================================
+     🧠 RENDER
+  ============================================= */
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 p-4 sm:p-8">
       <div className="max-w-4xl mx-auto">
@@ -102,7 +126,7 @@ function MemoriesPageContent() {
           </p>
         </header>
 
-        {/* Memories List */}
+        {/* Dreams List */}
         {entries.length === 0 ? (
           <div className="text-center py-20">
             <p className="text-neutral-500 dark:text-neutral-400 mb-8">
@@ -112,7 +136,7 @@ function MemoriesPageContent() {
               href={`/write?symbol=${encodeURIComponent(symbol)}`}
               className="px-8 py-3 bg-neutral-800 dark:bg-neutral-100 text-white dark:text-neutral-900 rounded-full hover:bg-neutral-700 dark:hover:bg-neutral-200 transition-colors inline-block"
             >
-              Write First Memory
+              Write First Dream
             </Link>
           </div>
         ) : (
@@ -170,42 +194,95 @@ function MemoriesPageContent() {
                           rows={6}
                         />
 
-                        {/* Tag editor */}
+                        {/* Curated Tag Picker */}
                         <div className="mt-4">
-                          <div className="flex flex-wrap gap-2 mb-2">
-                            {editTags.map((tag) => (
-                              <span
-                                key={tag}
-                                className="px-3 py-1 bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 text-xs rounded-full flex items-center gap-2"
-                              >
-                                #{tag}
-                                <button
-                                  onClick={() => removeTag(tag)}
-                                  className="text-neutral-400 hover:text-neutral-600"
-                                >
-                                  ×
-                                </button>
-                              </span>
-                            ))}
+                          <h3 className="text-sm text-neutral-500 dark:text-neutral-400 mb-3">
+                            Select dream tags:
+                          </h3>
+
+                          <div className="space-y-5">
+                            {Object.entries(TAG_CATEGORIES).map(
+                              ([category, tags]) => (
+                                <div key={category}>
+                                  <div className="text-xs uppercase tracking-wide text-neutral-400 dark:text-neutral-500 mb-2">
+                                    {category}
+                                  </div>
+
+                                  {category === 'Archetype' && (
+                                    <p className="text-[10px] text-neutral-500 dark:text-neutral-500 italic mb-1">
+                                      Tap twice for meaning
+                                    </p>
+                                  )}
+
+                                  {/* Tags with Tooltips */}
+                                  <div className="flex flex-wrap gap-2">
+                                    {tags.map((tag) => {
+                                      const isSelected =
+                                        editTags.includes(tag);
+                                      const definition = TAG_DEFINITIONS[tag];
+
+                                      return (
+                                        <div
+                                          key={tag}
+                                          className="relative group"
+                                        >
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              setEditTags((prev) =>
+                                                prev.includes(tag)
+                                                  ? prev.filter(
+                                                      (t) => t !== tag
+                                                    )
+                                                  : [...prev, tag]
+                                              )
+                                            }
+                                            className={`px-3 py-1 rounded-full text-xs border transition ${
+                                              isSelected
+                                                ? 'bg-neutral-800 text-white border-neutral-700 dark:bg-neutral-100 dark:text-neutral-900'
+                                                : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 border-neutral-300 dark:border-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-700'
+                                            }`}
+                                          >
+                                            #{tag.replaceAll('_', ' ')}
+                                          </button>
+
+                                          {/* Tooltip */}
+                                          {definition && (
+                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 text-xs text-neutral-200 bg-zinc-800 dark:bg-zinc-700 p-2 rounded-md opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none transition-opacity duration-300 z-20">
+                                              {definition}
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )
+                            )}
                           </div>
 
-                          <div className="flex gap-2">
-                            <input
-                              value={newTag}
-                              onChange={(e) => setNewTag(e.target.value)}
-                              onKeyDown={(e) =>
-                                e.key === 'Enter' && (e.preventDefault(), addTag())
-                              }
-                              placeholder="Add a tag..."
-                              className="flex-1 px-3 py-2 text-sm bg-neutral-100 dark:bg-neutral-800 rounded-lg border border-neutral-300 dark:border-neutral-700"
-                            />
-                            <button
-                              onClick={addTag}
-                              className="px-3 py-2 text-sm bg-neutral-800 dark:bg-neutral-100 text-white dark:text-neutral-900 rounded-lg hover:bg-neutral-700 dark:hover:bg-neutral-200"
-                            >
-                              Add
-                            </button>
-                          </div>
+                          {editTags.length > 0 && (
+                            <div className="mt-6 flex flex-wrap gap-2">
+                              {editTags.map((tag) => (
+                                <span
+                                  key={tag}
+                                  className="px-3 py-1 bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 text-xs rounded-full flex items-center gap-2"
+                                >
+                                  #{tag.replaceAll('_', ' ')}
+                                  <button
+                                    onClick={() =>
+                                      setEditTags((prev) =>
+                                        prev.filter((t) => t !== tag)
+                                      )
+                                    }
+                                    className="text-neutral-400 hover:text-neutral-600"
+                                  >
+                                    ×
+                                  </button>
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </>
                     ) : isExpanded || !needsExpansion ? (
@@ -253,7 +330,7 @@ function MemoriesPageContent() {
                           key={tag}
                           className="px-3 py-1 bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300 text-xs rounded-full"
                         >
-                          #{tag}
+                          #{tag.replaceAll('_', ' ')}
                         </span>
                       ))}
                     </div>
@@ -272,7 +349,9 @@ function MemoriesPageContent() {
                           .map((noun) => (
                             <Link
                               key={noun}
-                              href={`/dreams?symbol=${encodeURIComponent(noun)}`}
+                              href={`/dreams?symbol=${encodeURIComponent(
+                                noun
+                              )}`}
                               className="text-xs px-3 py-1 bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300 rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-600 transition-colors"
                             >
                               {noun}
@@ -291,7 +370,10 @@ function MemoriesPageContent() {
   );
 }
 
-export default function MemoriesPage() {
+/* ============================================
+   EXPORT
+============================================ */
+export default function DreamsPage() {
   return (
     <Suspense
       fallback={
@@ -300,7 +382,7 @@ export default function MemoriesPage() {
         </div>
       }
     >
-      <MemoriesPageContent />
+      <DreamsPageContent />
     </Suspense>
   );
 }
