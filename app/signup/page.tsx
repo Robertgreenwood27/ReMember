@@ -55,8 +55,9 @@ export default function SignUpPage() {
               We've sent a confirmation link to <strong>{email}</strong>
             </p>
             <p className="text-sm text-neutral-500 dark:text-neutral-500 mb-8">
-              Click the link in the email to activate your account.
-            </p>
+  Click the link in your email to activate your Noctis account.
+</p>
+
             <Link
               href="/login"
               className="inline-block px-6 py-2 text-sm bg-neutral-800 dark:bg-neutral-100 text-white dark:text-neutral-900 rounded-full hover:bg-neutral-700 dark:hover:bg-neutral-200 transition-colors"
@@ -74,11 +75,12 @@ export default function SignUpPage() {
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
           <h1 className="text-5xl font-light text-neutral-800 dark:text-neutral-100 mb-3">
-            🧠 ReMind
-          </h1>
-          <p className="text-neutral-500 dark:text-neutral-400 text-sm">
-            Create an account to sync your dreams
-          </p>
+  🌙 Noctis
+</h1>
+<p className="text-neutral-500 dark:text-neutral-400 text-sm">
+  Create an account to chart your dreams
+</p>
+
         </div>
 
         <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm p-8">
@@ -167,15 +169,6 @@ export default function SignUpPage() {
               </Link>
             </p>
           </div>
-        </div>
-
-        <div className="mt-6 text-center">
-          <button
-            onClick={() => router.push('/')}
-            className="text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300"
-          >
-            Continue without account (localStorage only)
-          </button>
         </div>
       </div>
     </div>

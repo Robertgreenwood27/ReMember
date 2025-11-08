@@ -70,11 +70,12 @@ export default function LoginPage() {
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
           <h1 className="text-5xl font-light text-neutral-800 dark:text-neutral-100 mb-3">
-            🧠 ReMind
-          </h1>
-          <p className="text-neutral-500 dark:text-neutral-400 text-sm">
-            Sign in to sync your dreams
-          </p>
+  🌙 Noctis
+</h1>
+<p className="text-neutral-500 dark:text-neutral-400 text-sm">
+  Sign in to explore your dream map
+</p>
+
         </div>
 
         <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm p-8">
@@ -142,24 +143,16 @@ export default function LoginPage() {
 
           <div className="mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-700 text-center">
             <p className="text-sm text-neutral-600 dark:text-neutral-400">
-              Don't have an account?{' '}
-              <Link
-                href="/signup"
-                className="text-neutral-800 dark:text-neutral-200 font-medium hover:underline"
-              >
-                Sign up
-              </Link>
-            </p>
-          </div>
-        </div>
+  Don't have an account?{' '}
+  <Link
+    href="/signup"
+    className="text-neutral-800 dark:text-neutral-200 font-medium hover:underline"
+  >
+    Join Noctis
+  </Link>
+</p>
 
-        <div className="mt-6 text-center">
-          <button
-            onClick={handleUseLocalStorage}
-            className="text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300"
-          >
-            Continue without account (localStorage only)
-          </button>
+          </div>
         </div>
       </div>
     </div>

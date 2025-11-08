@@ -51,6 +51,7 @@ function WritePageContent() {
   const [previousEntries, setPreviousEntries] = useState<Entry[]>([]);
   const [showPrevious, setShowPrevious] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [aiTags, setAiTags] = useState<string[]>([]);
 
   useEffect(() => {
     async function loadPrevious() {
@@ -72,15 +73,22 @@ function WritePageContent() {
     setIsSaving(true);
 
     try {
+      // 🧠 Use combined AI analysis endpoint
       const response = await fetch('/api/extract-symbols', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text }),
       });
 
-      if (!response.ok) throw new Error('Failed to extract symbols');
+      if (!response.ok) throw new Error('Failed to extract data');
       const data = await response.json();
+
       const nouns = data.symbols || [];
+      const tags = data.tags || [];
+
+      // Merge AI tags with any manual ones (if you leave manual UI)
+      const mergedTags = Array.from(new Set([...selectedTags, ...tags]));
+      setAiTags(tags);
 
       const entry: Entry = {
         id: uuidv4(),
@@ -89,7 +97,7 @@ function WritePageContent() {
         text,
         nouns,
         is_private: false,
-        tags: selectedTags,
+        tags: mergedTags,
       };
 
       await addEntry(entry);
@@ -174,10 +182,27 @@ function WritePageContent() {
             autoFocus
           />
 
-          {/* === TAG PICKER === */}
+          {/* === AUTO-TAG RESULT === */}
+          {aiTags.length > 0 && (
+            <div className="mt-4 p-3 bg-neutral-100 dark:bg-neutral-700 rounded-md text-sm text-neutral-600 dark:text-neutral-200">
+              <span className="font-medium text-neutral-500 dark:text-neutral-400">
+                AI suggested tags:
+              </span>{' '}
+              {aiTags.map((tag) => (
+                <span
+                  key={tag}
+                  className="inline-block ml-2 px-2 py-1 rounded-full bg-neutral-200 dark:bg-neutral-600 text-xs text-neutral-700 dark:text-neutral-100"
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* === MANUAL TAG PICKER === */}
           <div className="mt-6">
             <h3 className="text-sm text-neutral-500 dark:text-neutral-400 mb-3">
-              Select dream tags:
+              Adjust dream tags:
             </h3>
 
             <div className="space-y-5">

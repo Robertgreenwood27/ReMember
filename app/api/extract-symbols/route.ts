@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
+// 🔒 Simple in-memory cache (resets on server restart)
+const cache = new Map<string, { symbols: string[]; tags: string[] }>();
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
 });
@@ -8,76 +11,141 @@ const openai = new OpenAI({
 export async function POST(request: NextRequest) {
   try {
     const { text } = await request.json();
-
     if (!text || typeof text !== "string") {
       return NextResponse.json({ error: "Text is required" }, { status: 400 });
     }
 
-    // You can keep using gpt-4o-mini, which returns reliable output
+    const trimmed = text.trim();
+    if (!trimmed) {
+      return NextResponse.json({ symbols: [], tags: [] });
+    }
+
+    // ⚡ Check cache first
+    if (cache.has(trimmed)) {
+      console.log("🪄 Cache hit for dream text");
+      return NextResponse.json(cache.get(trimmed));
+    }
+
+    // 🧠 Send to OpenAI
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
           content: `You are an intuitive dream interpreter and linguistic analyst.
-Your task is to extract the most symbolically significant nouns and phrases from a dream entry — things that could represent imagery or recurring motifs in the dreamers subconscious.
-Focus on people, animals, objects, places, natural elements, emotions embodied as imagery, and archetypal symbols (e.g. “mirror,” “door,” “ocean,” “father,” “snake,” “city,” “shadow,” “light”).
 
-Guidelines:
+Your task is to extract two things from a dream journal entry:
+1. The most symbolically significant nouns or imagery ("symbols").
+2. The psychological and emotional themes that best describe the dream ("tags").
 
-Select concrete, visual, or emotionally charged nouns that could appear as symbols in someone’s mind.
+### Symbol Extraction
+Identify concrete, visual, or emotionally charged nouns that could appear as symbols in the dreamer’s mind.
+Focus on people, animals, objects, places, elements, and archetypal imagery (e.g. “mirror,” “door,” “ocean,” “father,” “snake,” “city,” “shadow,” “light”).
+Avoid verbs, filler words, or abstractions.
 
-Prefer distinctive or unusual words over common or abstract ones.
+### Tag Selection
+Choose one or more tags that apply **only** from this fixed list:
 
-Avoid filler words, pronouns, verbs, and vague abstractions.
+**Mood**
+calm, anxious, ecstatic, angry, fearful, peaceful, confused, joyful, lonely
 
-Output only the list of symbols (comma-separated or JSON array), no explanations.
-Return ONLY a JSON array of lowercase words, like: ["word1", "word2", "word3"].`,
+**Clarity**
+lucid, vivid, fragmented, blurry, surreal
+
+**Theme**
+falling, flying, pursuit, transformation, death, birth, loss, discovery, betrayal, escape, reunion
+
+**Archetype**
+shadow, anima, animus, self, ego, wise_old, trickster
+
+**Source**
+recurring, childhood, recent_event, stress, relationship
+
+Only include tags that clearly match the emotional tone, structure, or archetypal theme of the dream.
+Do not create new tags.
+
+### Output Format
+Respond ONLY with a valid JSON object like this:
+{
+  "symbols": ["mirror", "ocean", "snake"],
+  "tags": ["fearful", "shadow", "transformation"]
+}`,
         },
         {
           role: "user",
-          content: `Extract symbol words from this text:\n\n${text}`,
+          content: `Extract symbol words and tags from this text:\n\n${trimmed}`,
         },
       ],
       max_completion_tokens: 200,
     });
 
-    // ✅ TypeScript-safe extraction of message text
-    const choice = completion.choices?.[0];
-    const message = choice?.message as Record<string, any> | undefined;
-    const response =
-      (message?.content?.trim?.() as string | undefined) ||
-      (message?.output_text?.trim?.() as string | undefined) ||
-      "";
+    // ✅ Parse output
+    const raw = completion.choices?.[0]?.message?.content?.trim?.() ?? "";
+    console.log("🔍 Raw OpenAI output:", raw);
 
-    console.log("🔍 Raw OpenAI output:", response);
+    let data: { symbols?: string[]; tags?: string[] } = { symbols: [], tags: [] };
 
-    if (!response) {
-      console.warn("⚠️ No text returned from OpenAI");
-      return NextResponse.json({ symbols: [] });
-    }
-
-    let symbols: string[] = [];
+    // Primary parse attempt
     try {
-      symbols = JSON.parse(response);
-    } catch (err) {
-      console.warn("⚠️ Failed to parse JSON, raw output:", response);
-      return NextResponse.json({ symbols: [] });
+      data = JSON.parse(raw);
+    } catch {
+      console.warn("⚠️ Could not parse JSON. Attempting recovery...");
+
+      // 🧩 JSON repair fallback
+      try {
+        const jsonMatch = raw.match(/{[\s\S]*}/);
+        if (jsonMatch) {
+          data = JSON.parse(jsonMatch[0]);
+          console.log("✅ Recovered partial JSON structure.");
+        }
+      } catch (err2) {
+        console.warn("⚠️ Failed JSON recovery:", err2);
+      }
     }
 
-    const cleaned = Array.from(
+    // 🧹 Safety cleanups
+    const cleanSymbols = Array.from(
       new Set(
-        symbols
-          .map((word: string) => word.toLowerCase().trim())
-          .filter((word: string) => word.length >= 3)
+        (data.symbols || [])
+          .map((w) => w.toLowerCase().trim())
+          .filter((w) => w.length >= 3)
       )
     );
 
-    return NextResponse.json({ symbols: cleaned });
-  } catch (error: any) {
-    console.error("🧠 Error extracting symbols:", error.message || error);
+    const validTags = [
+      // Mood
+      "calm", "anxious", "ecstatic", "angry", "fearful",
+      "peaceful", "confused", "joyful", "lonely",
+      // Clarity
+      "lucid", "vivid", "fragmented", "blurry", "surreal",
+      // Theme
+      "falling", "flying", "pursuit", "transformation", "death",
+      "birth", "loss", "discovery", "betrayal", "escape", "reunion",
+      // Archetype
+      "shadow", "anima", "animus", "self", "ego", "wise_old", "trickster",
+      // Source
+      "recurring", "childhood", "recent_event", "stress", "relationship",
+    ];
+
+    const cleanTags = Array.from(
+      new Set(
+        (data.tags || [])
+          .map((t) => t.toLowerCase().trim())
+          .filter((t) => validTags.includes(t))
+      )
+    );
+
+    const result = { symbols: cleanSymbols, tags: cleanTags };
+
+    // 💾 Cache result for duplicate dream texts
+    cache.set(trimmed, result);
+    console.log(`🧠 Cached result (cache size: ${cache.size})`);
+
+    return NextResponse.json(result);
+  } catch (err: any) {
+    console.error("🧠 Error extracting data:", err.message || err);
     return NextResponse.json(
-      { error: "Failed to extract symbols", details: error.message || error },
+      { error: "Failed to extract symbols/tags", details: err.message || err },
       { status: 500 }
     );
   }

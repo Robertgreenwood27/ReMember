@@ -3,9 +3,10 @@ import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 
 export const metadata: Metadata = {
-  title: "ReMind - A Self-Growing Map of Personal Memory",
-  description: "A minimalist journaling web app that helps you rediscover your past through symbols.",
+  title: "Noctis - A Dream Map of the Subconscious",
+  description: "Map your inner world through dreams, symbols, and meaning.",
 };
+
 
 export default function RootLayout({
   children,
