@@ -71,15 +71,17 @@ const VISUAL_PAGE_SETTINGS = {
 
   // 🌀 Controls
   orbit: {
-    rotateSpeedDesktop: 0.4,
-    rotateSpeedMobile: 0.6,
-    zoomSpeedDesktop: 0.9,
-    zoomSpeedMobile: 1.2,
-    minDistanceDesktop: 10,
-    minDistanceMobile: 8,
-    maxDistanceDesktop: 70,
-    maxDistanceMobile: 45,
-  },
+  rotateSpeedDesktop: 0.4,
+  rotateSpeedMobile: 0.6,
+  zoomSpeedDesktop: 0.9,
+  zoomSpeedMobile: 1.2,
+  minDistanceDesktop: 10,
+  minDistanceMobile: 8,
+
+  // ⬇️ raise these to allow farther zoom-out
+  maxDistanceDesktop: 500, // was 70
+  maxDistanceMobile: 500,   // was 45
+},
 };
 
 export default function NeuralVisualizationPage() {
