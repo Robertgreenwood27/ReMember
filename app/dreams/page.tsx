@@ -125,6 +125,121 @@ function DreamsPageContent() {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <header className="mb-10">
+          {/* Entries List */}
+<div className="space-y-6">
+  {entries.length === 0 ? (
+    <div className="text-neutral-500 dark:text-neutral-400 text-center py-20">
+      No dreams recorded for this symbol yet.
+    </div>
+  ) : (
+    entries.map((entry) => (
+      <div
+        key={entry.id}
+        className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm p-6 transition hover:shadow-md"
+      >
+        {/* Date */}
+        <div className="text-xs text-neutral-400 mb-2">
+          {new Date(entry.date).toLocaleString()}
+        </div>
+
+        {/* View Mode */}
+        {editingEntry !== entry.id ? (
+          <>
+            <div
+              className="text-neutral-800 dark:text-neutral-100 whitespace-pre-wrap cursor-pointer"
+              onClick={() => toggleExpanded(entry.id)}
+            >
+              {expandedEntry === entry.id
+                ? entry.text
+                : entry.text.slice(0, 200) + (entry.text.length > 200 ? '…' : '')}
+            </div>
+
+            {/* Tags */}
+            {entry.tags && entry.tags.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-4">
+                {entry.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="px-2 py-1 text-xs bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 rounded-full"
+                  >
+                    #{tag.replaceAll('_', ' ')}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex justify-end gap-3 mt-4">
+              <button
+                onClick={() => {
+                  setEditingEntry(entry.id);
+                  setEditText(entry.text);
+                  setEditTags(entry.tags || []);
+                }}
+                className="text-sm text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
+              >
+                Edit
+              </button>
+            </div>
+          </>
+        ) : (
+          /* Edit Mode */
+          <div className="space-y-4">
+            <textarea
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              className="w-full h-40 p-3 bg-neutral-100 dark:bg-neutral-700 rounded-md text-neutral-800 dark:text-neutral-100 resize-none"
+            />
+            <div>
+              <h4 className="text-xs text-neutral-400 mb-2">Tags</h4>
+              <div className="flex flex-wrap gap-2">
+                {Object.values(TAG_CATEGORIES)
+                  .flat()
+                  .map((tag) => {
+                    const isSelected = editTags.includes(tag);
+                    return (
+                      <button
+                        key={tag}
+                        onClick={() =>
+                          setEditTags((prev) =>
+                            prev.includes(tag)
+                              ? prev.filter((t) => t !== tag)
+                              : [...prev, tag]
+                          )
+                        }
+                        className={`px-2 py-1 text-xs rounded-full border transition ${
+                          isSelected
+                            ? 'bg-neutral-800 text-white dark:bg-neutral-100 dark:text-neutral-900'
+                            : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700'
+                        }`}
+                      >
+                        #{tag.replaceAll('_', ' ')}
+                      </button>
+                    );
+                  })}
+              </div>
+            </div>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setEditingEntry(null)}
+                className="px-4 py-1 text-sm text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleSaveEdit(entry.id)}
+                className="px-4 py-1 text-sm bg-neutral-800 dark:bg-neutral-100 text-white dark:text-neutral-900 rounded-full hover:bg-neutral-700 dark:hover:bg-neutral-200 transition"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    ))
+  )}
+</div>
+
           <Link
             href="/"
             className="text-sm text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 mb-6 inline-block transition-colors"

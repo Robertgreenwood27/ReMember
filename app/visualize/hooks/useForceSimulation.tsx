@@ -3,11 +3,26 @@ import { useEffect, useState, useRef } from 'react';
 import { Entry } from '@/lib/types';
 import * as THREE from 'three';
 
+/* ==============================
+   🎨 EMOTIONAL THEME REGIONS
+   ============================== */
+const EMOTIONAL_ATTRACTORS = {
+  happy: { position: new THREE.Vector3(12, 8, 5), color: '#bba54a' },
+  exciting: { position: new THREE.Vector3(15, -3, 8), color: '#e1a257' },
+  love: { position: new THREE.Vector3(-8, 10, -6), color: '#c48f84' },
+  grateful: { position: new THREE.Vector3(-10, -5, 10), color: '#89a68a' },
+  calm: { position: new THREE.Vector3(5, -12, -8), color: '#6fa8a6' },
+  sad: { position: new THREE.Vector3(-12, 2, -10), color: '#4f5f75' },
+  fear: { position: new THREE.Vector3(-15, -8, 5), color: '#7b6ea6' },
+  angry: { position: new THREE.Vector3(10, 5, -12), color: '#915c4e' },
+  neutral: { position: new THREE.Vector3(0, 0, 0), color: '#7ea4c8' }, // Default for untagged
+};
+
 /**
- * 🧠 Force Simulation Hook
- * - Organically spaces entries and symbols in 3D
- * - Throttled + deterministic for GPU efficiency
- * - Tuned for larger, more "cosmic" layout
+ * 🧠 Thematic Clustering Force Simulation
+ * - Groups memories by emotional content
+ * - Creates distinct neighborhoods for different emotions
+ * - Symbols act as bridges between emotional regions
  */
 export function useForceSimulation(entries: Entry[], isMobile: boolean) {
   const [entryPositions, setEntryPositions] = useState<Map<string, THREE.Vector3>>(new Map());
@@ -30,37 +45,56 @@ export function useForceSimulation(entries: Entry[], isMobile: boolean) {
       });
     });
 
-    // 🌌 Expanded space radius
-    const radius = isMobile ? 14 : 20; // was 7 / 10
-
-    // Initial spherical distribution
+    /* ==============================
+       🎯 STEP 1: Place entries near their emotional attractors
+       ============================== */
     entries.forEach((entry) => {
-      const theta = Math.random() * Math.PI * 2;
-      const phi = Math.random() * Math.PI;
-      const r = radius + Math.random() * (isMobile ? 4 : 6);
-      const pos = new THREE.Vector3(
-        r * Math.sin(phi) * Math.cos(theta),
-        r * Math.sin(phi) * Math.sin(theta),
-        r * Math.cos(phi)
+      // Find primary emotion from tags
+      const primaryEmotion = detectPrimaryEmotion(entry.tags || []);
+      const attractor = EMOTIONAL_ATTRACTORS[primaryEmotion];
+      
+      // Place entry near its emotional region with some randomness
+      const spread = isMobile ? 3 : 4;
+      const offset = new THREE.Vector3(
+        (Math.random() - 0.5) * spread,
+        (Math.random() - 0.5) * spread,
+        (Math.random() - 0.5) * spread
       );
-      initialEntryPositions.set(entry.id, pos);
+      
+      const position = attractor.position.clone().add(offset);
+      initialEntryPositions.set(entry.id, position);
       initialVelocities.set(entry.id, new THREE.Vector3());
     });
 
-    // Average out symbol positions around their connected entries
+    /* ==============================
+       🌉 STEP 2: Place symbols between their connected emotional regions
+       ============================== */
     symbolsMap.forEach((entryIds, symbol) => {
-      const avg = new THREE.Vector3();
-      entryIds.forEach((id) => {
-        const p = initialEntryPositions.get(id);
-        if (p) avg.add(p);
+      // Find all emotional regions this symbol connects
+      const emotionalCentroids: THREE.Vector3[] = [];
+      
+      entryIds.forEach((entryId) => {
+        const entry = entries.find(e => e.id === entryId);
+        if (entry) {
+          const emotion = detectPrimaryEmotion(entry.tags || []);
+          emotionalCentroids.push(EMOTIONAL_ATTRACTORS[emotion].position);
+        }
       });
-      avg.divideScalar(entryIds.length);
-      avg.add(new THREE.Vector3(
-        (Math.random() - 0.5) * (isMobile ? 4 : 6),
-        (Math.random() - 0.5) * (isMobile ? 4 : 6),
-        (Math.random() - 0.5) * (isMobile ? 4 : 6)
+      
+      // Position symbol at the centroid of its emotional regions
+      const centroid = new THREE.Vector3();
+      emotionalCentroids.forEach(c => centroid.add(c));
+      centroid.divideScalar(emotionalCentroids.length);
+      
+      // Add slight randomness
+      const jitter = isMobile ? 2 : 3;
+      centroid.add(new THREE.Vector3(
+        (Math.random() - 0.5) * jitter,
+        (Math.random() - 0.5) * jitter,
+        (Math.random() - 0.5) * jitter
       ));
-      initialSymbolPositions.set(symbol, avg);
+      
+      initialSymbolPositions.set(symbol, centroid);
       initialVelocities.set(symbol, new THREE.Vector3());
     });
 
@@ -69,14 +103,17 @@ export function useForceSimulation(entries: Entry[], isMobile: boolean) {
     velocities.current = initialVelocities;
 
     /* ==========================================
-       ⚙️ Simplified force simulation loop
+       ⚙️ STEP 3: Gentle refinement simulation
        ========================================== */
     let frame = 0;
-    const maxFrames = isMobile ? 240 : 300; // run slightly longer to stabilize
-    const tickInterval = 30; // ~33ms → ~30fps
-    const repelStrength = isMobile ? 2.0 : 3.0; // ↑ more space between nodes
-    const attractStrength = 0.025;
-    const damping = 0.92; // ↓ slower, smoother motion
+    const maxFrames = isMobile ? 180 : 240;
+    const tickInterval = 30;
+    
+    // Lighter forces to maintain clustering
+    const repelStrength = isMobile ? 0.8 : 1.2; // Weaker repulsion to keep clusters tight
+    const attractToEmotionStrength = 0.05; // Pull entries back to their emotional center
+    const attractToConnectedStrength = 0.02; // Pull symbols toward their entries
+    const damping = 0.88;
 
     const interval = setInterval(() => {
       frame++;
@@ -89,9 +126,11 @@ export function useForceSimulation(entries: Entry[], isMobile: boolean) {
       const forces = new Map<string, THREE.Vector3>();
       allKeys.forEach((k) => forces.set(k, new THREE.Vector3()));
 
-      // 💥 Repulsion (skip some pairs for perf)
+      /* ==========================================
+         💥 Light repulsion (avoid overlap)
+         ========================================== */
       for (let i = 0; i < allKeys.length; i++) {
-        for (let j = i + 2; j < allKeys.length; j += 2) {
+        for (let j = i + 1; j < allKeys.length; j++) {
           const posA =
             initialEntryPositions.get(allKeys[i]) ||
             initialSymbolPositions.get(allKeys[i]);
@@ -102,30 +141,61 @@ export function useForceSimulation(entries: Entry[], isMobile: boolean) {
 
           const delta = new THREE.Vector3().subVectors(posA, posB);
           const dist = Math.max(delta.length(), 0.1);
-          const strength = repelStrength / (dist * dist);
-          delta.normalize().multiplyScalar(strength);
-          forces.get(allKeys[i])!.add(delta);
-          forces.get(allKeys[j])!.sub(delta);
+          
+          // Only repel if very close
+          if (dist < 3) {
+            const strength = repelStrength / (dist * dist);
+            delta.normalize().multiplyScalar(strength);
+            forces.get(allKeys[i])!.add(delta);
+            forces.get(allKeys[j])!.sub(delta);
+          }
         }
       }
 
-      // 🧲 Attraction (entries ↔ their symbols)
+      /* ==========================================
+         🎯 Pull entries toward their emotional attractor
+         ========================================== */
+      entries.forEach((entry) => {
+        const pos = initialEntryPositions.get(entry.id);
+        if (!pos) return;
+        
+        const emotion = detectPrimaryEmotion(entry.tags || []);
+        const attractor = EMOTIONAL_ATTRACTORS[emotion].position;
+        
+        const delta = new THREE.Vector3().subVectors(attractor, pos);
+        const dist = delta.length();
+        
+        // Gentle pull back to emotional center
+        if (dist > 2) {
+          delta.normalize().multiplyScalar(attractToEmotionStrength * dist);
+          forces.get(entry.id)!.add(delta);
+        }
+      });
+
+      /* ==========================================
+         🌉 Pull symbols toward their connected entries
+         ========================================== */
       symbolsMap.forEach((entryIds, symbol) => {
         const symbolPos = initialSymbolPositions.get(symbol);
         if (!symbolPos) return;
+        
         entryIds.forEach((entryId) => {
           const entryPos = initialEntryPositions.get(entryId);
           if (!entryPos) return;
+          
           const delta = new THREE.Vector3().subVectors(entryPos, symbolPos);
           const dist = delta.length();
-          const attraction = dist * attractStrength;
+          const attraction = dist * attractToConnectedStrength;
+          
           delta.normalize().multiplyScalar(attraction);
           forces.get(symbol)!.add(delta);
-          forces.get(entryId)!.sub(delta.multiplyScalar(0.25));
+          forces.get(entryId)!.sub(delta.multiplyScalar(0.3));
         });
       });
 
-      // 🚀 Integrate velocities
+      /* ==========================================
+         🚀 Integrate velocities
+         ========================================== */
       const newEntryPositions = new Map<string, THREE.Vector3>();
       const newSymbolPositions = new Map<string, THREE.Vector3>();
 
@@ -155,4 +225,33 @@ export function useForceSimulation(entries: Entry[], isMobile: boolean) {
   }, [entries, isMobile]);
 
   return { entryPositions, symbolPositions };
+}
+
+/* ==============================
+   🎨 Detect Primary Emotion
+   ============================== */
+function detectPrimaryEmotion(tags: string[]): keyof typeof EMOTIONAL_ATTRACTORS {
+  if (!tags || tags.length === 0) return 'neutral';
+  
+  // Priority order for emotion detection
+  const emotionPriority: (keyof typeof EMOTIONAL_ATTRACTORS)[] = [
+    'love',
+    'happy',
+    'exciting',
+    'grateful',
+    'calm',
+    'sad',
+    'fear',
+    'angry',
+  ];
+  
+  for (const emotion of emotionPriority) {
+    for (const tag of tags) {
+      if (tag.toLowerCase().includes(emotion)) {
+        return emotion;
+      }
+    }
+  }
+  
+  return 'neutral';
 }
